@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.*
+.DS_Store
+*.log
+playwright-report
+test-results
+.playwright-mcp
+*.png
+*.jpg
+referenzen
