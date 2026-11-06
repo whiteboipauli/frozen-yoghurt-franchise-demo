@@ -3,8 +3,9 @@ import { actions, useDb } from '../data/repository'
 import { todayISO, WEEKDAYS, weekdayIdx } from '../lib/date'
 import { fmtDayMonth } from '../lib/format'
 import type { Gap } from '../logic/hr'
-import { shiftsOf, suggestFor, timeRange, weekHours } from '../logic/gapfill'
-import { isAbsent, monthHours } from '../logic/hr'
+import { gapChoices, shiftsOf, suggestFor, timeRange, weekHours, type Assignment } from '../logic/gapfill'
+import { gapReason } from '../logic/callouts'
+import { monthHours } from '../logic/hr'
 import type { Employee } from '../data/types'
 import { Icon } from '../icons'
 import { Avatar, Btn, Modal, useToast } from '../ui/kit'
@@ -19,15 +20,9 @@ export function GapDialog({ storeId, date, gap, onClose }: { storeId: string; da
   const valid = useMemo(() => suggestFor(db, storeId, date, gap, today), [db, storeId, date, gap, today])
   const picks = valid.slice(0, 3)
   const hoursOf = (e: Employee) => `${nf.format(Math.round(weekHours(db, e, date) * 10) / 10)} Std. diese Woche · ${nf.format(Math.round(monthHours(db, e, today) * 10) / 10)} Std. im Monat`
-  const others = db.employees.filter((e) => e.storeId === storeId && e.active && !picks.some((p) => p.emp.id === e.id)).map((e) => {
-    const ok = valid.some((p) => p.emp.id === e.id)
-    let reason = ''
-    if (!ok) {
-      const abs = isAbsent(db.absences, e.id, date)
-      reason = abs ? (abs.type === 'Krank' ? 'krank' : 'frei') : db.shifts.some((s) => s.empId === e.id && s.date === date && s.status !== 'ausfall') ? 'schon eingeplant' : 'nicht verfügbar'
-    }
-    return { e, ok, reason }
-  }).sort((x, y) => Number(y.ok) - Number(x.ok) || x.e.name.localeCompare(y.e.name, 'de'))
+  const choices = useMemo(() => gapChoices(db, storeId, date, gap, today), [db, storeId, date, gap, today])
+  const others = choices.filter((c) => !picks.some((p) => p.emp.id === c.emp.id)).sort((x, y) => Number(y.ok) - Number(x.ok) || x.emp.name.localeCompare(y.emp.name, 'de'))
+  const reason = gapReason(db, storeId, date, gap)
   const [sel, setSel] = useState<string[] | null>(null)
   const chosen = sel ?? picks.slice(0, gap.missing).map((p) => p.emp.id)
   const planned = db.shifts.filter((s) => s.storeId === storeId && s.date === date && s.status !== 'ausfall').sort((a, b) => a.start - b.start)
@@ -36,7 +31,7 @@ export function GapDialog({ storeId, date, gap, onClose }: { storeId: string; da
     setSel(cur.length > gap.missing ? cur.slice(cur.length - gap.missing) : cur)
   }
   const apply = () => {
-    const list = valid.filter((p) => chosen.includes(p.emp.id))
+    const list: Assignment[] = chosen.map((id) => choices.find((c) => c.emp.id === id)).filter((c): c is NonNullable<typeof c> => !!c && c.ok).map((c) => ({ emp: c.emp, start: gap.from, end: gap.to, reason: '', openHours: 0, warnings: [] }))
     if (!list.length) return
     actions.saveShifts(shiftsOf(storeId, date, list, 'Eingeplant'))
     toast(list.length > 1 ? `${list.length} Personen eingeplant` : `${list[0].emp.name.split(' ')[0]} ist ${timeRange(gap.from, gap.to)} eingeplant`)
@@ -47,6 +42,7 @@ export function GapDialog({ storeId, date, gap, onClose }: { storeId: string; da
       <div className="gap-dlg" data-tour="gap-dialog">
         <h2>Lücke schließen</h2>
         <p className="gap-head"><Signal level="rot" size={22} /> {WEEKDAYS[weekdayIdx(date)]} {fmtDayMonth(date)} · {timeRange(gap.from, gap.to).replace(' Uhr', '')} Uhr · es {gap.missing === 1 ? 'fehlt 1 Person' : `fehlen ${gap.missing} Personen`}</p>
+        {reason && <p className="gap-reason"><Icon name="person-ausfall" size={16} /> <b>Grund:</b> {reason}</p>}
 
         <div className="cap" style={{ margin: '16px 0 8px' }}>Schon eingeplant</div>
         {planned.length === 0 ? <p className="muted">Noch niemand an diesem Tag.</p> : (
@@ -73,18 +69,18 @@ export function GapDialog({ storeId, date, gap, onClose }: { storeId: string; da
 
         <div className="cap" style={{ margin: '16px 0 8px' }}>Andere Mitarbeitende</div>
         <div className="gap-others">
-          {others.map(({ e, ok, reason }) => (
+          {others.map(({ emp: e, ok, blocked, hints }) => (
             <button key={e.id} type="button" className={`gap-pick ${chosen.includes(e.id) ? 'on' : ''} ${ok ? '' : 'off'}`} disabled={!ok} aria-pressed={chosen.includes(e.id)} onClick={() => toggle(e.id)}>
               <Avatar name={e.name} photoUrl={e.photoUrl} size={32} />
-              <span className="grow"><b>{e.name}</b><span className="muted small">{hoursOf(e)}</span></span>
-              {ok ? <SignalChip level="gruen">passt</SignalChip> : <span className="gap-why">{reason}</span>}
+              <span className="grow"><b>{e.name}</b><span className="muted small">{hoursOf(e)}</span>{hints.length > 0 && <span className="gap-hint small">{hints.join(' · ')}</span>}</span>
+              {ok ? <SignalChip level="gruen">wählbar</SignalChip> : <span className="gap-why">{blocked}</span>}
             </button>
           ))}
         </div>
       </div>
       <div className="actions">
         <Btn onClick={onClose}>Schließen</Btn>
-        <Btn kind="primary" icon="check" disabled={!chosen.length || !picks.length} data-tour="apply-pick" onClick={apply}>Einplanen</Btn>
+        <Btn kind="primary" icon="check" disabled={!chosen.length} data-tour="apply-pick" onClick={apply}>Einplanen</Btn>
       </div>
     </Modal>
   )

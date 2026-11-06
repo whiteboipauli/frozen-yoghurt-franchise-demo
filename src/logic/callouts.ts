@@ -3,6 +3,7 @@ import { addDays, diffDays, todayISO, WEEKDAYS, weekdayIdx } from '../lib/date'
 import { fmtTime } from '../lib/format'
 import { valueOn, maxMonthHours, netOf } from './hr'
 import { candidatesForGap } from './staffplan'
+import { dayStaffing } from './staffing'
 import type { SigTask } from './signals'
 
 /* ===== Krankmeldung / Ausfall ===== */
@@ -41,10 +42,39 @@ export function answerCover(db: Db, calloutId: string, reqId: string, answer: 'z
 export const leaveOpen = (db: Db, calloutId: string, shiftId: string): Db => upd(db, calloutId, (c) => ({ ...c, left: [...new Set([...c.left, shiftId])] }))
 export const setEau = (db: Db, calloutId: string, eau: Callout['eau']): Db => upd(db, calloutId, (c) => ({ ...c, eau }))
 
-/** Schichten eines Ausfalls, die noch niemand übernommen hat (und nicht bewusst offen bleiben) */
+/** Schichten eines Ausfalls, die noch niemand übernommen hat (und nicht bewusst offen bleiben) und für die im Dienstplan wirklich noch eine Lücke besteht */
 export function openShifts(db: Db, c: Callout, today = todayISO()): Shift[] {
-  return c.shiftIds.map((id) => db.shifts.find((s) => s.id === id)).filter((s): s is Shift => !!s && s.date >= today && !c.covered[s.id] && !c.left.includes(s.id)).sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start)
+  return c.shiftIds.map((id) => db.shifts.find((s) => s.id === id)).filter((s): s is Shift => !!s && s.date >= today && !c.covered[s.id] && !c.left.includes(s.id)
+    && dayStaffing(db, s.storeId, s.date, today).gaps.some((g) => g.from < s.end && g.to > s.start)).sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start)
 }
+/** Grund einer Lücke: Krankmeldung(en), deren Ausfall-Schicht das Zeitfenster berührt – sonst nichts */
+export function gapReason(db: Db, storeId: string, date: string, gap: { from: number; to: number }): string | null {
+  const names = new Set<string>()
+  for (const c of (db.callouts ?? []).filter((x) => x.storeId === storeId)) {
+    for (const id of c.shiftIds) {
+      const s = db.shifts.find((x) => x.id === id)
+      if (s && s.date === date && s.status === 'ausfall' && !c.covered[s.id] && s.start < gap.to && s.end > gap.from) names.add(db.employees.find((e) => e.id === c.empId)?.name ?? 'Mitarbeiter/in')
+    }
+  }
+  return names.size ? `Krankmeldung ${[...names].join(', ')}` : null
+}
+/** Offene Lücken, die durch eine Krankmeldung entstanden sind (je Zeitfenster eine) */
+export interface SickGap { key: string; calloutId: string; empName: string; date: string; gap: { from: number; to: number; missing: number } }
+export function sickGaps(db: Db, storeId: string, today = todayISO()): SickGap[] {
+  const out: SickGap[] = []
+  for (const c of calloutsOf(db, storeId)) {
+    const name = db.employees.find((e) => e.id === c.empId)?.name ?? 'Mitarbeiter/in'
+    for (const s of openShifts(db, c, today)) {
+      for (const g of dayStaffing(db, storeId, s.date, today).gaps) {
+        if (g.from < s.end && g.to > s.start && !out.some((o) => o.calloutId === c.id && o.date === s.date && o.gap.from === g.from)) out.push({ key: `${c.id}|${s.date}|${g.from}`, calloutId: c.id, empName: name, date: s.date, gap: g })
+      }
+    }
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date) || a.gap.from - b.gap.from)
+}
+/** „heute“ bzw. „am Di 10.11.“ */
+export const dayWord = (date: string, today = todayISO()) => (date === today ? 'heute' : `am ${WEEKDAYS[weekdayIdx(date)].slice(0, 2)} ${date.slice(8, 10)}.${date.slice(5, 7)}.`)
+export const missingWord = (n: number) => (n === 1 ? '1 Person' : `${n} Personen`)
 export const calloutsOf = (db: Db, storeId: string) => (db.callouts ?? []).filter((c) => c.storeId === storeId)
 export const isClosed = (db: Db, c: Callout, today = todayISO()) => openShifts(db, c, today).length === 0
 /** Offene Ausfälle des Ladens (mit mindestens einer unbesetzten Schicht) */

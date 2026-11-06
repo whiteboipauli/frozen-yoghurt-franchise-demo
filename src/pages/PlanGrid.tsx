@@ -10,7 +10,7 @@ import { dayStaffing, gapCount, staffDay } from '../logic/staffing'
 import { wxKind } from '../logic/weather'
 import { weekStart } from '../logic/weekly'
 import { dayWxIcon } from '../logic/today'
-import { range } from '../logic/callouts'
+import { gapReason, range } from '../logic/callouts'
 import { Icon } from '../icons'
 import { Avatar, Btn, Modal, Segmented, useToast } from '../ui/kit'
 import { IconTile, Signal, SignalChip, type Level } from '../ui/signal'
@@ -97,7 +97,7 @@ export function PlanPage({ storeId }: { storeId: string }) {
                 return (
                   <div key={`${d}${h}`} className={`tg-cell ${state} ${d < today ? 'past' : ''} ${win ? 'click' : ''}`} data-tour={firstGap ? 'gap-block' : undefined}
                     role={win ? 'button' : undefined} tabIndex={win ? 0 : undefined} onClick={() => win && setGapDlg({ date: d, gap: win })} onKeyDown={(e) => win && e.key === 'Enter' && setGapDlg({ date: d, gap: win })}
-                    title={`${WEEKDAYS_SHORT[weekdayIdx(d)]} ${h}–${h + 1} Uhr: Bedarf ${need}`}>
+                    title={`${WEEKDAYS_SHORT[weekdayIdx(d)]} ${h}–${h + 1} Uhr: Bedarf ${need}${win && gapReason(db, storeId, d, win) ? ` · Grund: ${gapReason(db, storeId, d, win)}` : ''}`}>
                     {here.map((s) => {
                       const e = db.employees.find((x) => x.id === s.empId)
                       const sick = s.status === 'ausfall'

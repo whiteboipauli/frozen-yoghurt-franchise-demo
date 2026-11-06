@@ -50,6 +50,7 @@ export function storeTips(db: Db, storeId: string, today = todayISO()): Tip[] {
   for (let i = 1; i < 14; i++) {
     const date = addDays(today, i)
     const d = dayStaffing(db, storeId, date, today)
+    if (d.gaps.length) continue // Tage mit Lücke nie als überbesetzt bezeichnen
     let run: { from: number; to: number } | null = null
     const flush = () => {
       if (run && run.to - run.from >= 2 && (!over || run.to - run.from > over.to - over.from)) over = { date, from: run.from, to: run.to, extra: 1 }

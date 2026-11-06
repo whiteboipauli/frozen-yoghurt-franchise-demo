@@ -16,8 +16,9 @@ import { goodsOf } from '../logic/finance'
 import { feeFor, lastMonths, makeFeeInvoice, monthBounds, revCtx, revenueNet } from '../logic/fees'
 import { candidatesForGap } from '../logic/staffplan'
 import { dayStaffing, staffDay } from '../logic/staffing'
+import { reportSick } from '../logic/callouts'
 
-export const DB_VERSION = 22
+export const DB_VERSION = 23
 export const HISTORY_DAYS = 90
 /** Verkaufshistorie: 13 Monate (inkl. Vorjahr) */
 export const SALES_DAYS = 400
@@ -548,8 +549,9 @@ export function buildSeed(wxByLoc?: Record<string, WxMap | null>): Db {
   const hr = seedHr(base, today)
   const withHr: Db = { ...base, ...hr }
   shapeGaps(withHr, TOUR_STORE, today)
-  fixDemoGaps(withHr, today)
-  return tuneMango(withHr, TOUR_STORE)
+  const sick = seedSick(withHr, TOUR_STORE, today)
+  fixDemoGaps(sick, today)
+  return tuneMango(sick, TOUR_STORE)
 }
 
 /**
@@ -594,6 +596,17 @@ function shapeGaps(db: Db, sid: string, today: string) {
     }
   }
   db.shifts = [...db.shifts.filter((x) => !mine(x)), ...added]
+}
+
+/** Die Lücke von heute entsteht durch eine Krankmeldung: eine Person, die heute zur Lückenzeit eingeplant war, ist krank gemeldet (Schicht grau „krank“) */
+function seedSick(db: Db, sid: string, today: string): Db {
+  const g = dayStaffing(db, sid, today, today).gaps[0]
+  if (!g) return db
+  const busy = new Set(db.shifts.filter((x) => x.storeId === sid && x.date === today).map((x) => x.empId))
+  const who = db.employees.filter((e: Employee) => e.storeId === sid && e.active && !busy.has(e.id)).sort((a, b) => a.id.localeCompare(b.id))[0]
+  if (!who) return db
+  db.shifts.push({ id: 'sh-demo-sick', storeId: sid, empId: who.id, date: today, start: g.from, end: g.to, locked: false, why: 'Demo-Dienstplan' })
+  return reportSick(db, { id: 'ko-demo', storeId: sid, empId: who.id, from: today, to: today, eau: 'folgt', note: 'Krank gemeldet', via: 'mitarbeiter', at: `${today}T07:40:00` })
 }
 
 /** Demo-Verfügbarkeiten: Jede Lücke der nächsten 14 Tage lässt sich mit mindestens einer Person ohne Warnung schließen (plus einige mit Warnung) */

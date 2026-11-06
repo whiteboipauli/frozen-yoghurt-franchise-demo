@@ -3,7 +3,8 @@ import { actions, useDb } from '../data/repository'
 import type { Callout } from '../data/types'
 import { addDays, todayISO, WEEKDAYS, weekdayIdx } from '../lib/date'
 import { fmtDate, fmtDayMonth } from '../lib/format'
-import { absentOn as _a, closedCallouts, countdownText, openCallouts, openShifts, range, suggestionsFor, type Suggestion } from '../logic/callouts'
+import { absentOn as _a, countdownText, dayWord, missingWord, openShifts, range, sickGaps, suggestionsFor, type Suggestion } from '../logic/callouts'
+import type { Gap } from '../logic/hr'
 import { Icon } from '../icons'
 import { Avatar, Btn, Modal, useToast } from '../ui/kit'
 import { IconTile, Signal, SignalChip, TimeChip } from '../ui/signal'
@@ -14,41 +15,26 @@ void _a
 const when = (iso: string) => new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(new Date(iso)) + ' Uhr'
 const NOTE = 'Hinweis (kein Rechtsrat): Krankheitsstunden werden weiter bezahlt (Entgeltfortzahlung) und zählen zur Verdienstgrenze. Die Krankmeldung gilt unverzüglich, die Krankschreibung (eAU) ist ab dem 4. Kalendertag nötig.'
 
-/** Ausfall-Karte oben auf „Heute“ (nur, wenn ein Ausfall offen ist) – und ein grüner Hinweis, wenn er geschlossen wurde */
-export function AbsenceCard({ storeId, onOpen }: { storeId: string; onOpen: (calloutId: string) => void }) {
+/** Krankmeldungs-Hinweis oben auf „Heute“: solange durch eine Krankmeldung eine Lücke offen ist; verschwindet, sobald sie geschlossen ist */
+export function AbsenceCard({ storeId, onOpen, onGap }: { storeId: string; onOpen: (calloutId: string) => void; onGap: (date: string, gap: Gap) => void }) {
   const db = useDb()
   const today = todayISO()
-  const open = openCallouts(db, storeId, today)
-  const closed = closedCallouts(db, storeId, today).filter((c) => c.reportedAt.slice(0, 10) === today)
-  if (!open.length && !closed.length) return null
+  const list = sickGaps(db, storeId, today).slice(0, 3)
+  if (!list.length) return null
   return (
     <>
-      {open.map((c) => {
-        const e = db.employees.find((x) => x.id === c.empId)
-        const sh = openShifts(db, c, today)
-        const first = sh[0]
-        const cd = countdownText(first)
-        const asked = c.requests.find((r) => r.status === 'angefragt')
-        return (
-          <section key={c.id} className="glass card in absence-card" data-tour="absence">
-            <Signal level="rot" size={52} pulse />
-            <div className="absence-main">
-              <div className="cap">Ausfall</div>
-              <h2>{e?.name} fällt aus</h2>
-              <p className="muted">{c.via === 'mitarbeiter' ? 'Selbst gemeldet' : 'Von der Ladenleitung eingetragen'} am {when(c.reportedAt)} · {first.date === today ? 'heute' : `${WEEKDAYS[weekdayIdx(first.date)]}, ${fmtDayMonth(first.date)}`} {range(first.start, first.end)}{sh.length > 1 ? ` und ${sh.length - 1} weitere` : ''}</p>
-              <div className="row wrap" style={{ gap: 8 }}>
-                <TimeChip level={cd.level}>{cd.text}</TimeChip>
-                {asked && <SignalChip level="bernstein" variant="uhr">{`Angefragt: ${db.employees.find((x) => x.id === asked.empId)?.name.split(' ')[0]}`}</SignalChip>}
-              </div>
-            </div>
-            <Btn kind="primary" icon="person-plus" onClick={() => onOpen(c.id)}>Ersatz finden</Btn>
-          </section>
-        )
-      })}
-      {!open.length && closed.map((c) => (
-        <section key={c.id} className="glass card in absence-card ok">
-          <Signal level="gruen" size={44} />
-          <div className="absence-main"><h2>Ausfall geschlossen</h2><p className="muted">{db.employees.find((x) => x.id === c.empId)?.name}: alle Schichten sind neu besetzt.</p></div>
+      {list.map((k) => (
+        <section key={k.key} className="glass card in absence-card" data-tour="absence" role="alert">
+          <Signal level="rot" size={52} pulse />
+          <div className="absence-main">
+            <div className="cap row" style={{ gap: 8 }}><SignalChip level="rot">Krankmeldung</SignalChip></div>
+            <h2>Krankmeldung: {k.empName} ist {dayWord(k.date, today)} krank.</h2>
+            <p className="muted">Dadurch {k.gap.missing === 1 ? 'fehlt' : 'fehlen'} {missingWord(k.gap.missing)} von {range(k.gap.from, k.gap.to)}.</p>
+          </div>
+          <div className="row wrap" style={{ gap: 8 }}>
+            <Btn kind="primary" icon="person-plus" onClick={() => onGap(k.date, k.gap)}>Lücke schließen</Btn>
+            <Btn kind="glass" onClick={() => onOpen(k.calloutId)}>Ersatz anfragen</Btn>
+          </div>
         </section>
       ))}
     </>

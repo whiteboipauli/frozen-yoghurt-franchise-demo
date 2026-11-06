@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { useDb } from './data/repository'
 import { brand } from './brand'
 import { OWN_STORES } from './data/stores'
-import { go, useRoute } from './lib/router'
+import { go, goBack, useRoute } from './lib/router'
 import { hqLegacy, storeRest } from './lib/routes'
 import { applyTheme, logout, setUi, useUi } from './lib/ui-state'
 import { fmtShortToday } from './lib/format'
@@ -175,6 +175,12 @@ export function App() {
       case '/einstellungen': page = isHq ? <SettingsPage /> : null; break
       default: page = null
     }
+  // Detailseiten bekommen oben links „← Zurück“ (Ziel: vorherige App-Seite, sonst die übergeordnete Liste)
+  const backTo = eff.startsWith('/zentrale/laeden/') ? '/zentrale/laeden'
+    : eff.startsWith('/zentrale/meldungen/') || eff.startsWith('/zentrale/fall/') ? '/zentrale/meldungen'
+      : eff.startsWith('/zentrale/rechnungen/') ? '/zentrale/finanzen/rechnungen'
+        : eff.startsWith('/filiale/rechnungen/') ? `${sp}/ware/rechnungen`
+          : eff.startsWith('/zentrale/lieferschein/') ? '/zentrale/bestellungen' : null
   const pageKey = eff.replace(/\/(ware|hq|finanzen|kommunikation)\/[^/]+$/, '/$1').replace(/(\/zentrale\/laeden\/[^/]+)\/[^/]+$/, '$1') + store.id
 
   const who = isHq ? 'HQ' : `${store.name}${store.tag ? ` · ${store.tag}` : store.own ? ' · HQ-eigen' : ' · Franchisenehmer'}`
@@ -203,6 +209,7 @@ export function App() {
             <span className="shop-card-ico"><Icon name={isHq ? 'hq' : 'haus'} size={20} /></span>
             <div className="shop-card-text"><b title={isHq && !inOwn ? 'HQ' : store.name}>{isHq && !inOwn ? brand.zentraleName : store.name}</b><span>{isHq && !inOwn ? brand.zentraleUntertitel : store.own ? 'HQ-eigener Laden' : 'Franchise-Laden'}</span></div>
           </div>
+          <p className="side-demo" title="Alle Zahlen in diesem Prototyp sind erfundene Demodaten">Demodaten – keine echten Zahlen</p>
           <div className="nav-foot-actions">
             <button className="linkbtn" onClick={() => startTour(isHq ? 'hq' : 'store')}><Icon name="play" size={15} />Rundgang</button>
             <button className="btn glass sm" data-tour="logout" onClick={() => { logout(); go('/') }}><Icon name="logout" size={16} />Abmelden</button>
@@ -217,7 +224,6 @@ export function App() {
             </div>
             {inOwn && <span className="who-view"><Icon name="eye" size={16} />Ansicht: {store.name}</span>}
             <span className="topbar-fill" />
-            <span className="demo-pill" title="Alle Zahlen in diesem Prototyp sind erfundene Demodaten">Demodaten – keine echten Zahlen</span>
             <span className="today-pill">{fmtShortToday()}</span>
             <button className="top-btn" aria-label="Benachrichtigungen" onClick={() => setBell((b) => !b)}>
               <Icon name="bell" size={20} />
@@ -225,7 +231,10 @@ export function App() {
             </button>
           </header>
           <main className="content">
-            <div className="page" key={pageKey}>{page}</div>
+            <div className="page" key={pageKey}>
+              {backTo && <div className="back-row no-print"><button className="btn glass back-btn" data-back onClick={() => goBack(backTo)}><Icon name="pfeil-zurueck" size={17} />Zurück</button></div>}
+              {page}
+            </div>
             <p className="foot no-print">Wetterdaten: Open-Meteo · Demodaten, alle Werte änderbar</p>
           </main>
         </div>

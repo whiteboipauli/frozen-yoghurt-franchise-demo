@@ -17,6 +17,8 @@ import { Btn, Card, CountUp } from '../ui/kit'
 import { IconTile, LegendLink, Signal, SignalChip, type Level } from '../ui/signal'
 import { TasksCard } from '../ui/Tasks'
 import { AbsenceCard, ReplaceDialog } from './Absence'
+import { GapDialog } from './GapDialog'
+import type { Gap } from '../logic/hr'
 
 /** Linie „Tagesverlauf“: durchgezogen = bisher, gestrichelt = Prognose, Punkt = jetzt */
 function SalesChart({ actual, forecast, nowIdx, labels }: { actual: number[]; forecast: number[]; nowIdx: number; labels: string[] }) {
@@ -44,6 +46,7 @@ export function Heute({ storeId }: { storeId: string }) {
   const today = todayISO()
   const [openArt, setOpenArt] = useState<string | null>(null)
   const [callout, setCallout] = useState<string | null>(null)
+  const [gapDlg, setGapDlg] = useState<{ date: string; gap: Gap } | null>(null)
   const store = storeOf(db, storeId)
   const sig = useMemo(() => storeSignals(db, storeId, today), [db, storeId, today])
   const sales = useMemo(() => salesToday(db, storeId, today), [db, storeId, today])
@@ -93,7 +96,7 @@ export function Heute({ storeId }: { storeId: string }) {
       </div>
 
       <div className="stack n-stack">
-        <AbsenceCard storeId={storeId} onOpen={setCallout} />
+        <AbsenceCard storeId={storeId} onOpen={setCallout} onGap={(date, gap) => setGapDlg({ date, gap })} />
 
         <div className="n-top">
           <section className="glass card in n-status" data-tour="status">
@@ -164,6 +167,7 @@ export function Heute({ storeId }: { storeId: string }) {
         )}
       </div>
       {openArt && <ArticleModal storeId={storeId} articleId={openArt} onClose={() => setOpenArt(null)} />}
+      {gapDlg && <GapDialog storeId={storeId} date={gapDlg.date} gap={gapDlg.gap} onClose={() => setGapDlg(null)} />}
       {callout && <ReplaceDialog calloutId={callout} onClose={() => setCallout(null)} />}
       <span hidden>{expectedCups.length}</span>
     </>

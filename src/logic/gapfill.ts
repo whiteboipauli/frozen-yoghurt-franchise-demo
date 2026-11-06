@@ -3,7 +3,8 @@ import { addDays, todayISO, WEEKDAYS, weekdayIdx } from '../lib/date'
 import { fmtTime } from '../lib/format'
 import type { Gap } from './hr'
 import { candidatesForGap, type Candidate } from './staffplan'
-import { netOf } from './hr'
+import { availWindow, isAbsent, netOf, weekCap } from './hr'
+import { openHours, storeOf } from './history'
 import { weekStart } from './weekly'
 import { dayStaffing, staffDay } from './staffing'
 import { holidayOn } from './history'
@@ -169,3 +170,29 @@ export function planAllGaps(db: Db, storeId: string, dates: string[], today = to
   return out
 }
 void addDays
+
+/** Auswahl im Pop-up „Lücke schließen“: nicht wählbar nur bei Überschneidung, Krankheit/Abwesenheit oder freiem Tag; alles andere ist wählbar (mit Hinweisen in Worten) */
+export interface GapChoice { emp: Employee; ok: boolean; blocked?: string; hints: string[]; weekH: number }
+export function gapChoices(db: Db, storeId: string, date: string, gap: Gap, today = todayISO()): GapChoice[] {
+  const { open, close } = openHours(storeOf(db, storeId), date)
+  const hr = (a: number, b: number) => `${fmtTime(a).replace(':00', '').replace(/^0/, '')}–${fmtTime(b).replace(':00', '').replace(/^0/, '')}`
+  return db.employees.filter((e) => e.storeId === storeId && e.active).map((e) => {
+    const mine = db.shifts.filter((s) => s.empId === e.id && s.date === date && s.status !== 'ausfall')
+    const clash = mine.find((s) => s.start < gap.to && s.end > gap.from)
+    const abs = isAbsent(db.absences, e.id, date)
+    const w = abs ? null : availWindow(db.availability.find((a) => a.empId === e.id && a.date === date), open, close)
+    const weekH = weekHours(db, e, date)
+    const hints: string[] = []
+    let blocked: string | undefined
+    if (abs) blocked = abs.type === 'Krank' ? 'krank' : 'frei'
+    else if (clash) blocked = `schon eingeplant ${hr(clash.start, clash.end)}`
+    else if (!w) blocked = 'an dem Tag frei'
+    else {
+      const other = mine.filter((s) => !(s.start < gap.to && s.end > gap.from))
+      if (other.length) hints.push(`hat Schicht ${other.map((s) => hr(s.start, s.end)).join(', ')}`)
+      if (w[0] > gap.from || w[1] < gap.to) hints.push(`laut Verfügbarkeit nur ${hr(w[0], w[1])} Uhr`)
+      if (weekH + (gap.to - gap.from) > weekCap(db.settings.hr, e, date) + 1e-9) hints.push('schon viele Stunden diese Woche')
+    }
+    return { emp: e, ok: !blocked, blocked, hints, weekH }
+  })
+}

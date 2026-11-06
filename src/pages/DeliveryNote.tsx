@@ -14,7 +14,7 @@ export function DeliveryNotePage({ id }: { id: string }) {
   const c = db.settings.company
   return (
     <>
-      <PageHead title={`Lieferschein ${co.no}`} hint="Zum Mitgeben oder Abheften. Über „Drucken“ auch als PDF speicherbar." right={<div className="row no-print"><Btn kind="glass" onClick={() => go('/zentrale/bestellungen')}>Zurück</Btn><Btn kind="primary" icon="print" onClick={() => window.print()}>Drucken</Btn></div>} />
+      <PageHead title={`Lieferschein ${co.no}`} hint="Zum Mitgeben oder Abheften. Über „Drucken“ auch als PDF speicherbar." right={<div className="row no-print"><Btn kind="primary" icon="print" onClick={() => window.print()}>Drucken</Btn></div>} />
       <article className="paper">
         <header className="paper-head">
           <div><div className="paper-brand">{c.name}</div><div className="paper-small">{c.street}, {c.zipCity}</div></div>

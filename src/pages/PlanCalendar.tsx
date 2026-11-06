@@ -12,6 +12,7 @@ import { wxKind } from '../logic/weather'
 import { weekStart } from '../logic/weekly'
 import { Icon } from '../icons'
 import { Avatar, Btn, Modal, Segmented, Switch, useToast } from '../ui/kit'
+import { gapReason } from '../logic/callouts'
 import { GapDialog } from './GapDialog'
 import { useAutoFill } from './AutoFill'
 
@@ -155,7 +156,7 @@ export function PlanCalendar({ storeId }: { storeId: string }) {
                 {over.map((o, i) => <span key={i} className="cal-over" style={{ top: y(o.from), height: (o.to - o.from) * HOUR_PX }} title="Überbesetzung" />)}
                 {ds.gaps.map((g) => (
                   <button key={`${g.from}-${g.to}`} className={`cal-gap ${hasShift(g) ? 'side' : ''}`} style={{ top: y(g.from) + 1, height: (g.to - g.from) * HOUR_PX - 2 }} disabled={past}
-                    title={gapText(d, g)} data-tour="gap-block" onClick={(e) => { e.stopPropagation(); setGapDlg({ date: d, gap: g }) }}>
+                    title={`${gapText(d, g)}${gapReason(db, storeId, d, g) ? ` · Grund: ${gapReason(db, storeId, d, g)}` : ''}`} data-tour="gap-block" onClick={(e) => { e.stopPropagation(); setGapDlg({ date: d, gap: g }) }}>
                     <b>{missingText(g.missing)}</b><span>{short(g.from)}–{short(g.to)}</span>
                   </button>
                 ))}
@@ -202,7 +203,8 @@ export function ShiftDialog({ storeId, init, onClose }: { storeId: string; init:
   const dayOpts = Array.from({ length: 14 }, (_, i) => addDays(today, i))
   if (!dayOpts.includes(date)) dayOpts.unshift(date)
   const step = Array.from({ length: Math.round((close - open) * 2) + 1 }, (_, i) => open + i / 2)
-  const valid = to > from && !!empId
+  const clash = empId && to > from ? db.shifts.find((x) => x.empId === empId && x.date === date && x.id !== existing?.id && x.status !== 'ausfall' && x.start < to && x.end > from) : undefined
+  const valid = to > from && !!empId && !clash
   const dbWithout = useMemo(() => (existing ? { ...db, shifts: db.shifts.filter((s) => s.id !== existing.id) } : db), [db, existing])
 
   const cands = useMemo<Cand[]>(() => {
@@ -250,6 +252,7 @@ export function ShiftDialog({ storeId, init, onClose }: { storeId: string; init:
               <div className={`pick ${sel.warnings.length ? 'warn' : ''}`}>
                 <Avatar name={sel.e.name} photoUrl={sel.e.photoUrl} size={38} />
                 <div className="grow"><b>{sel.e.name}</b><div className="small muted">{to > from ? `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format(netOf(db.settings.hr, sel.e, { start: from, end: to }))} Std. netto` : 'Ende nach Beginn wählen'}</div>
+                  {clash && <div className="cand-warn"><Icon name="warn" size={13} stroke={2.4} />{sel?.e.name.split(' ')[0]} ist {fmtTime(clash.start)}–{clash.end === Math.floor(clash.end) ? fmtTime(clash.end) : fmtTime(clash.end)} Uhr schon eingeplant</div>}
                   {sel.warnings.map((w) => <div key={w} className="cand-warn"><Icon name="warn" size={13} stroke={2.4} />{w}</div>)}</div>
               </div>
             ) : <div className="pick empty-pick">Noch niemand gewählt – rechts eine Person anklicken.</div>}

@@ -110,6 +110,7 @@ export function ArticleModal({ storeId, articleId, onClose }: { storeId: string;
   return (
     <Modal onClose={onClose} wide light>
       <div className="am-modal">
+        <button type="button" className="btn glass sm back-btn" onClick={onClose}><Icon name="pfeil-zurueck" size={16} />Zurück</button>
         <div className="row" style={{ gap: 18, alignItems: 'flex-start' }}>
           <ArtBadge article={a} size={84} />
           <div style={{ flex: 1 }}>

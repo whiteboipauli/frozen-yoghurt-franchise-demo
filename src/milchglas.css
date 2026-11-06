@@ -661,8 +661,7 @@ button.big-count { padding: 0; display: flex; align-items: center; gap: 14px; bo
 .art-quote { padding: 12px 14px; border-radius: var(--r-md); background: var(--tile-bg); border: 1px solid var(--tile-edge); margin: 8px 0 12px; }
 
 /* HQ-Cockpit: zwei Karten nebeneinander */
-.cp-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
-.cp-top > .rc-card.expanded { grid-column: 1 / -1; }
+.cp-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: stretch; }
 @media (max-width: 1100px) { .cp-top { grid-template-columns: 1fr; } }
 .rc-card.compact .rc-top { grid-template-columns: 1fr !important; gap: 10px !important; }
 .rc-card.compact .rc-total { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
@@ -677,3 +676,23 @@ button.big-count { padding: 0; display: flex; align-items: center; gap: 14px; bo
 .stk-del { display: inline-flex; align-items: center; gap: 2px; font-style: normal; font-size: 9.5px; font-weight: 800; color: var(--wine); white-space: nowrap; }
 .stk-explain { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; padding: 10px 12px; border-radius: var(--r-md); background: rgba(194, 65, 58, .08); border: 1px solid rgba(194, 65, 58, .25); font-size: 13.5px; }
 .stk-explain p { flex: 1; min-width: 240px; margin: 0; }
+
+.gap-reason { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; font-size: 13.5px; color: var(--wine); }
+.gap-hint { display: block; color: var(--ink-3); }
+.critical:not(.sick-pop) ~ .sick-pop { top: 150px; }
+
+/* Obere Leiste: kleiner, scrollt mit der Seite weg */
+.topbar { position: static !important; top: auto !important; min-height: 44px !important; padding: 4px 10px 4px 14px !important; margin-bottom: 14px !important; border-radius: 18px !important; }
+.topbar .who { height: 34px; font-size: 14px; }
+.topbar .today-pill { font-size: 12.5px; }
+.side-demo { margin: 6px 4px 0; text-align: center; font-size: 11px; color: var(--ink-3); line-height: 1.3; }
+
+/* Cockpit: gleich hohe Karten; Tabelle und Meldungen scrollen bei Bedarf in sich */
+.cp-top > .glass.card { height: 100%; margin: 0; }
+.cp-top > .tasks-card { display: flex; flex-direction: column; min-height: 0; }
+.cp-top > .tasks-card .task-group { flex: 1; min-height: 0; max-height: 470px; overflow-y: auto; }
+.cp-top .rc-card.expanded .table-wrap { max-height: 430px; overflow: auto; }
+
+.back-row { margin: 0 0 14px; }
+.back-btn { font-weight: 650; }
+.am-modal > .back-btn { margin-bottom: 12px; }
