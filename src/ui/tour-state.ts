@@ -30,7 +30,8 @@ export const markWelcomed = () => {
 /** Aktueller Wert aus dem Browser-Speicher (nicht nur beim App-Start gelesen) */
 export const isWelcomed = () => { try { return !!localStorage.getItem('fj-ww-welcomed') } catch { return true } }
 
-/** Dauerhafter Merker „Nicht mehr automatisch zeigen“ */
+/** Merker „Nicht mehr automatisch zeigen“: gilt nur für die aktuelle Browser-Sitzung */
 const OFF = 'fj-ww-welcome-off'
-export const welcomeOff = () => { try { return !!localStorage.getItem(OFF) } catch { return false } }
-export const setWelcomeOff = (on: boolean) => { try { if (on) localStorage.setItem(OFF, '1'); else localStorage.removeItem(OFF) } catch { /* ignorieren */ } }
+try { localStorage.removeItem(OFF) } catch { /* ignorieren */ }
+export const welcomeOff = () => { try { return !!sessionStorage.getItem(OFF) } catch { return false } }
+export const setWelcomeOff = (on: boolean) => { try { if (on) sessionStorage.setItem(OFF, '1'); else sessionStorage.removeItem(OFF) } catch { /* ignorieren */ } }

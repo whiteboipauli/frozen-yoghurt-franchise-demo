@@ -1,5 +1,5 @@
 import type { Article, Db } from '../data/types'
-import { addDays, diffDays, todayISO, weekdayIdx, WEEKDAYS } from '../lib/date'
+import { addDays, diffDays, leadDays, todayISO, weekdayIdx, WEEKDAYS } from '../lib/date'
 import { packBase } from './consumption'
 import { packsOf } from './invoice'
 import { stockNow, usedOn } from './stock'
@@ -185,16 +185,17 @@ export function forecastArticle(db: Db, storeId: string, a: Article, today = tod
   const incomingQty = inc.reduce((s, x) => s + x.qty, 0)
   const { bufferDays, targetDays } = db.settings
   const daysLeft = emptyDate ? diffDays(emptyDate, today) : null
-  const latestOrderDate = emptyDate ? addDays(emptyDate, -a.leadTimeDays - bufferDays) : null
+  const lead = leadDays(today, a.leadTimeDays)
+  const latestOrderDate = emptyDate ? addDays(emptyDate, -lead - bufferDays) : null
   let light: Light = 'green'
   if (daily > 0 && emptyDate && latestOrderDate) {
-    if (stock <= 0 || daysLeft! < a.leadTimeDays) light = 'red'
+    if (stock <= 0 || daysLeft! < lead) light = 'red'
     else if (latestOrderDate <= today) light = 'yellow'
   }
   let suggestion: ArticleForecast['suggestion'] = null
   if (latestOrderDate && latestOrderDate <= addDays(today, 3) && daily > 0) {
     let untilDelivery = Math.max(0, expectedUse(db, storeId, a.id, today, today) - usedOn(db, storeId, a.id, today))
-    for (let i = 1; i <= a.leadTimeDays; i++) untilDelivery += expectedUse(db, storeId, a.id, addDays(today, i), today)
+    for (let i = 1; i <= lead; i++) untilDelivery += expectedUse(db, storeId, a.id, addDays(today, i), today)
     const need = untilDelivery + targetDays * daily - (Math.max(0, stock) + incomingQty)
     const packs = Math.max(1, Math.ceil(need / packBase(a)))
     if (need > 0) suggestion = { packs, qty: packs * packBase(a) }

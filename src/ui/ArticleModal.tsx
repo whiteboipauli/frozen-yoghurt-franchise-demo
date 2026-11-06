@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { actions, useDb } from '../data/repository'
 import { cart } from '../lib/cart'
 import { go } from '../lib/router'
-import { addDays, todayISO, WEEKDAYS_SHORT, weekdayIdx } from '../lib/date'
+import { addDays, leadDays, todayISO, WEEKDAYS_SHORT, weekdayIdx } from '../lib/date'
 import { fmt0, fmtDate, fmtDayMonth, fmtEUR, fmtQty } from '../lib/format'
 import { packBase } from '../logic/consumption'
 import { expectedUse, forecastAll, incomingFor, reachTone } from '../logic/forecast'
@@ -26,7 +26,7 @@ function StockStrip({ storeId, articleId, packs, upperPacks }: { storeId: string
   const today = todayISO()
   const shelf = shelfDays(articleId)
   const sim = useMemo(() => stockSim(db, storeId, articleId, packs, today), [db, storeId, articleId, packs, today])
-  const lead = Math.min(a.leadTimeDays, 59)
+  const lead = Math.min(leadDays(today, a.leadTimeDays), 59)
   const day = (i: number) => addDays(today, i)
   const fmtD = (d: string) => `${WEEKDAYS_SHORT[weekdayIdx(d)]} ${fmtDayMonth(d)}`
   const firstLuecke = Array.from({ length: lead }, (_, i) => i).find((i) => !sim.covered[i]) ?? -1

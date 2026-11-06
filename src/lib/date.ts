@@ -31,3 +31,8 @@ export const range = (from: string, to: string) => {
   for (let d = from; d <= to; d = addDays(d, 1)) out.push(d)
   return out
 }
+
+/** Liefertag: Bestelltag + Lieferzeit; sonntags wird nicht geliefert, dann kommt die Ware am Montag */
+export const deliveryOn = (from: string, lead: number) => { const d = addDays(from, lead); return weekdayIdx(d) === 6 ? addDays(d, 1) : d }
+/** Lieferzeit in Tagen ab diesem Tag, mit Sonntagsregel */
+export const leadDays = (from: string, lead: number) => diffDays(deliveryOn(from, lead), from)

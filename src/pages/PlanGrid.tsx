@@ -35,13 +35,13 @@ export function PlanPage({ storeId }: { storeId: string }) {
   const [callout, setCallout] = useState<string | null>(null)
   const [sick, setSick] = useState(false)
   const [month, setMonth] = useState(today.slice(0, 7))
-  const start = addDays(weekStart(today), week * 7)
+  const start = addDays(today, week * 7)
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i))
   const emps = db.employees.filter((e) => e.storeId === storeId && e.active)
-  const viol = useMemo(() => validateShifts(db, storeId, days[0], days[6]), [db, storeId, days[0]])
+  const viol = useMemo(() => validateShifts(db, storeId, weekStart(days[0]), days[6]).filter((v) => v.date >= today), [db, storeId, days[0]])
   const info = days.map((d) => ({ d, sd: staffDay(db, storeId, d, today), ds: dayStaffing(db, storeId, d, today) }))
   const gapsTotal = gapCount(db, storeId, days, today)
-  const wk0 = weekStart(today)
+  const wk0 = today
   const gapsA = gapCount(db, storeId, Array.from({ length: 7 }, (_, i) => addDays(wk0, i)), today)
   const gapsB = gapCount(db, storeId, Array.from({ length: 7 }, (_, i) => addDays(wk0, 7 + i)), today)
   const hr = db.settings.hr
@@ -57,8 +57,8 @@ export function PlanPage({ storeId }: { storeId: string }) {
       <div className="row between wrap">
         <div className="row wrap" style={{ gap: 10 }}>
           <Segmented<View> value={view} onChange={setView} options={[{ value: 'woche', label: 'Woche', icon: 'kalender' }, { value: 'monat', label: 'Monat' }, { value: 'tag', label: 'Tag' }]} />
-          {view === 'woche' && <Segmented value={String(week)} onChange={(v) => planUi.setWeek(Number(v))} options={[{ value: '0', label: 'Diese Woche' }, { value: '1', label: 'Nächste Woche' }]} />}
-          {view === 'woche' && (gapsA + gapsB ? <SignalChip level="rot">{`${gapsA} ${gapsA === 1 ? 'Lücke' : 'Lücken'} diese Woche · ${gapsB} nächste Woche`}</SignalChip> : <SignalChip level="gruen">Alles besetzt</SignalChip>)}
+          {view === 'woche' && <Segmented value={String(week)} onChange={(v) => planUi.setWeek(Number(v))} options={[{ value: '0', label: 'Nächste 7 Tage' }, { value: '1', label: 'Danach' }]} />}
+          {view === 'woche' && (gapsA + gapsB ? <SignalChip level="rot">{`${gapsA} ${gapsA === 1 ? 'Lücke' : 'Lücken'} in den nächsten 7 Tagen · ${gapsB} danach`}</SignalChip> : <SignalChip level="gruen">Alles besetzt</SignalChip>)}
         </div>
         <div className="row wrap no-print" style={{ gap: 10 }}>
           <Btn icon="person-ausfall" onClick={() => setSick(true)}>Krankmeldung</Btn>

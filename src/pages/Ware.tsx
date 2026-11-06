@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { actions, useDb } from '../data/repository'
 import { cart, useCart } from '../lib/cart'
 import { go } from '../lib/router'
-import { addDays, todayISO, WEEKDAYS_SHORT, weekdayIdx } from '../lib/date'
+import { addDays, deliveryOn, leadDays, todayISO, WEEKDAYS_SHORT, weekdayIdx } from '../lib/date'
 import { fmtEUR } from '../lib/format'
 import { reachPct, reachTone, type ArticleForecast } from '../logic/forecast'
 import { reichtText, stockSim } from '../logic/stocksim'
@@ -84,7 +84,7 @@ function ArtikelTab({ storeId }: { storeId: string }) {
           const a = f.article
           const yo = a.source === 'zentrale'
           const sim0 = stockSim(db, storeId, a.id, 0)
-          const leadRed = sim0.firstGap < a.leadTimeDays
+          const leadRed = sim0.firstGap < leadDays(todayISO(), a.leadTimeDays)
           const tone = leadRed ? 'red' : reachTone(f)
           const lvl: Level = tone === 'red' ? 'rot' : tone === 'yellow' ? 'bernstein' : 'gruen'
           const n = sugOf(f)
@@ -162,7 +162,7 @@ function CartDrawer({ storeId }: { storeId: string }) {
   })
   const t = totalsOf(lines)
   const minLead = lines.length ? Math.max(...lines.map((l) => l.a.leadTimeDays)) : 3
-  const earliest = addDays(todayISO(), minLead)
+  const earliest = deliveryOn(todayISO(), minLead)
   const wish = c.wish && c.wish >= earliest ? c.wish : earliest
   const send = () => {
     const id = actions.placeCentralOrder(storeId, lines.map((l) => ({ articleId: l.a.id, packs: l.packs })), wish, c.note)

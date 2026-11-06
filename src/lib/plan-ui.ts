@@ -14,7 +14,7 @@ export const planUi = {
   setView: (view: PlanView) => set({ view }),
   setWeek: (week: number) => set({ week: Math.max(0, Math.min(1, week)), focus: null }),
   /** Springt in den Kalender zu diesem Tag (richtige Woche, Tag hervorgehoben) */
-  openDay: (date: string) => set({ view: 'kalender', week: Math.max(0, Math.min(1, Math.floor(diffDays(weekStart(date), weekStart(todayISO())) / 7))), focus: date }),
+  openDay: (date: string) => set({ view: 'kalender', week: Math.max(0, Math.min(1, Math.floor(diffDays(date, todayISO()) / 7))), focus: date }),
   clearFocus: () => set({ focus: null }),
   /** Dienstplan in der Tagesansicht von heute öffnen */
   openTagToday: () => set({ pageView: 'tag', week: 0, focus: null }),

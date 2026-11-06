@@ -1,3 +1,4 @@
+import { leadDays, todayISO } from '../lib/date'
 import type { Article } from '../data/types'
 import { packBase } from './consumption'
 import type { ArticleForecast, Light } from './forecast'
@@ -37,7 +38,7 @@ export function orderPlan(f: ArticleForecast, targetDays: number): OrderPlan {
   const perPackDays = has ? pb / f.daily : null
   const need = (days: number) => (has ? Math.max(0, Math.ceil((days * f.daily - (Math.max(0, f.stock) + f.incomingQty)) / pb - 1e-9)) : 0)
   // „nächste Lieferung“ = Lieferzeit + eine Woche Bestellrhythmus
-  const min = Math.max(1, need(a.leadTimeDays + 7))
+  const min = Math.max(1, need(leadDays(todayISO(), a.leadTimeDays) + 7))
   const opt = Math.max(min, f.suggestion?.packs ?? need(targetDays), 1)
   const upper = Math.max(opt, Math.ceil(opt * 1.3))
   const max = Math.max(upper + 2, Math.ceil(opt * 2.2), 6)

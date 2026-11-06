@@ -85,7 +85,7 @@ export function PlanCalendar({ storeId }: { storeId: string }) {
   const today = todayISO()
   const [dlg, setDlg] = useState<ShiftInit | null>(null)
   const [gapDlg, setGapDlg] = useState<{ date: string; gap: Gap } | null>(null)
-  const start = addDays(weekStart(today), week * 7)
+  const start = addDays(today, week * 7)
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i))
   const autoFill = useAutoFill(storeId, days)
   const info = days.map((d) => ({ d, sd: staffDay(db, storeId, d, today), ds: dayStaffing(db, storeId, d, today) }))
@@ -96,7 +96,7 @@ export function PlanCalendar({ storeId }: { storeId: string }) {
   const focusRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => { if (focus) { focusRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' }); const t = setTimeout(() => planUi.clearFocus(), 2600); return () => clearTimeout(t) } }, [focus, week])
   const gapsTotal = gapCount(db, storeId, days, today)
-  const wk0 = weekStart(today)
+  const wk0 = today
   const gapsA = gapCount(db, storeId, Array.from({ length: 7 }, (_, i) => addDays(wk0, i)), today)
   const gapsB = gapCount(db, storeId, Array.from({ length: 7 }, (_, i) => addDays(wk0, 7 + i)), today)
 
@@ -110,8 +110,8 @@ export function PlanCalendar({ storeId }: { storeId: string }) {
           <span role="listitem"><Icon name="lock" size={12} stroke={2.4} /> gesperrt</span>
         </div>
         <div className="row wrap no-print">
-          <span className={`pill ${gapsA + gapsB ? 'red' : 'green'}`}>{gapsA + gapsB ? `${gapsA} ${gapsA === 1 ? 'Lücke' : 'Lücken'} diese Woche · ${gapsB} nächste Woche` : 'Alles besetzt'}</span>
-          <Segmented value={String(week)} onChange={(v) => planUi.setWeek(Number(v))} options={[{ value: '0', label: 'Diese Woche' }, { value: '1', label: 'Nächste Woche' }]} />
+          <span className={`pill ${gapsA + gapsB ? 'red' : 'green'}`}>{gapsA + gapsB ? `${gapsA} ${gapsA === 1 ? 'Lücke' : 'Lücken'} in den nächsten 7 Tagen · ${gapsB} danach` : 'Alles besetzt'}</span>
+          <Segmented value={String(week)} onChange={(v) => planUi.setWeek(Number(v))} options={[{ value: '0', label: 'Nächste 7 Tage' }, { value: '1', label: 'Danach' }]} />
           <Btn icon="plus" data-tour="add-shift" onClick={() => setDlg({ date: days.find((d) => d >= today) ?? days[0], start: info[0].sd.open, end: info[0].sd.open + 4 })}>Schicht hinzufügen</Btn>
           <Btn kind="primary" icon="sparkle" data-tour="fill-all" disabled={!gapsTotal} onClick={autoFill.run}>Alle Lücken automatisch füllen</Btn>
         </div>

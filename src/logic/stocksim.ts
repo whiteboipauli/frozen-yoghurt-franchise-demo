@@ -1,5 +1,5 @@
 import type { Db } from '../data/types'
-import { addDays, todayISO } from '../lib/date'
+import { addDays, deliveryOn, todayISO } from '../lib/date'
 import { packBase } from './consumption'
 import { expectedUse, incomingFor } from './forecast'
 import { stockNow } from './stock'
@@ -16,7 +16,7 @@ export function stockSim(db: Db, storeId: string, articleId: string, packs: numb
   const a = db.articles.find((x) => x.id === articleId)!
   const arrive = new Map<string, number>()
   for (const i of incomingFor(db, storeId, articleId, today)) arrive.set(i.date, (arrive.get(i.date) ?? 0) + i.qty)
-  if (packs > 0) { const d = addDays(today, a.leadTimeDays); arrive.set(d, (arrive.get(d) ?? 0) + packs * packBase(a)) }
+  if (packs > 0) { const d = deliveryOn(today, a.leadTimeDays); arrive.set(d, (arrive.get(d) ?? 0) + packs * packBase(a)) }
   let stock = Math.max(0, stockNow(db, storeId, articleId))
   const covered: boolean[] = []
   for (let i = 0; i < 60; i++) {

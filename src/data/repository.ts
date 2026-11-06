@@ -3,7 +3,7 @@ import { inventoryState } from '../logic/inventory'
 import type { CostTargets, Absence, Article, Availability, Campaign, KnowEntry, Post, CaseRec, CaseStatus, CentralOrder, CoLine, Company, Db, Delivery, Employee, Holiday, HrSettings, Invoice, InventoryLine, Order, OrderLine, Outflow, OutflowReason, Recipe, SaleDay, SchoolHoliday, Settings, Shift, Store } from './types'
 import { makeTracking } from '../logic/shipping'
 import { load, reset, save } from './storage'
-import { addDays, todayISO } from '../lib/date'
+import { addDays, deliveryOn, todayISO } from '../lib/date'
 import { packBase, toBase } from '../logic/consumption'
 import { stockNow } from '../logic/stock'
 import { tuneMango } from '../logic/tourprep'
@@ -184,7 +184,7 @@ export const actions = {
       if (!ls.length) return db
       const lead = Math.max(...ls.map((l) => db.articles.find((a) => a.id === l.articleId)?.leadTimeDays ?? 1))
       const today = todayISO()
-      const o: Order = { id: uid('o'), storeId, supplier, status: 'bestellt', orderedOn: today, expectedOn: addDays(today, lead), lines: ls }
+      const o: Order = { id: uid('o'), storeId, supplier, status: 'bestellt', orderedOn: today, expectedOn: deliveryOn(today, lead), lines: ls }
       return { ...db, orders: [...db.orders, o] }
     })
   },
