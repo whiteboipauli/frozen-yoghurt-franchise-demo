@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { actions, useDb } from '../data/repository'
 import { cart, useCart } from '../lib/cart'
 import { go } from '../lib/router'
-import { addDays, todayISO } from '../lib/date'
+import { addDays, todayISO, WEEKDAYS_SHORT, weekdayIdx } from '../lib/date'
 import { fmtEUR } from '../lib/format'
 import { reachPct, reachTone, type ArticleForecast } from '../logic/forecast'
 import { reichtText, stockSim } from '../logic/stocksim'
@@ -112,7 +112,7 @@ function ArtikelTab({ storeId }: { storeId: string }) {
               {yo
                 ? <button className={`n-art-cart ${inCart ? 'on' : ''}`} title={inCart ? 'Aus dem Warenkorb nehmen' : 'In den Warenkorb'} aria-label={`${a.name}: ${inCart ? 'aus dem Warenkorb nehmen' : 'in den Warenkorb'}`} onClick={(e) => { e.stopPropagation(); cart.bind(storeId); if (inCart) { cart.set(a.id, 0); toast(`${a.name} aus dem Warenkorb genommen`) } else { const q = Math.max(1, n); cart.set(a.id, q); toast(`${q} × ${a.name} im Warenkorb`, { action: { label: 'Warenkorb öffnen', onClick: () => cart.setOpen(true) } }) } }}><Icon name={inCart ? 'check' : 'cart'} size={18} /><span>{inCart ? 'Im Warenkorb' : 'In den Warenkorb'}</span></button>
                 : <button className="n-art-cart" title="Details" aria-label={`${a.name}: Details`} onClick={(e) => { e.stopPropagation(); setOpen(a.id) }}><Icon name="arrow" size={18} /><span>Details</span></button>}
-              {leadRed && <span className="n-art-warn"><Signal level="rot" size={16} />Lieferzeit {a.leadTimeDays} {a.leadTimeDays === 1 ? 'Tag' : 'Tage'} – heute bestellen</span>}
+              {leadRed && <span className="n-art-warn"><Signal level="rot" size={16} />Lieferlücke ab {WEEKDAYS_SHORT[weekdayIdx(addDays(todayISO(), sim0.firstGap))]} – heute bestellen (Lieferzeit {a.leadTimeDays} {a.leadTimeDays === 1 ? 'Tag' : 'Tage'})</span>}
               {ev?.t === 'zu viel' && <span className="n-art-warn"><Signal level="bernstein" size={16} />Zu viel: Verfallsrisiko und Schwund. Ein kleinerer Karton-Zähler reicht meist.</span>}
             </div>
           )

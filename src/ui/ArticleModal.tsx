@@ -18,39 +18,58 @@ import { Btn, LightPill, Modal, NumInput, Pill, useToast } from './kit'
 /** Haltbarkeit in Tagen: frische Ware kürzer, alles andere zählt 14 Tage */
 const shelfDays = (id: string) => (['erdbeeren', 'mango', 'blaubeeren', 'kiwi', 'himbeeren'].includes(id) ? 10 : 14)
 
-/** Tagesleiste „Reicht der Bestand?“: 14 Tage ab heute, Bestand heute, Verbrauch aus der Prognose, Lieferung nach Lieferzeit, schon Bestelltes mitgerechnet */
+/** Tagesleiste „Reicht der Bestand?“: 14 Tage ab heute. Vor dem Liefertermin hängt alles nur vom Bestand ab (Lieferlücke), erst ab der Lieferung wirkt die Bestellmenge. */
 function StockStrip({ storeId, articleId, packs, upperPacks }: { storeId: string; articleId: string; packs: number; upperPacks: number }) {
   const db = useDb()
+  const toast = useToast()
   const a = db.articles.find((x) => x.id === articleId)!
   const today = todayISO()
   const shelf = shelfDays(articleId)
   const sim = useMemo(() => stockSim(db, storeId, articleId, packs, today), [db, storeId, articleId, packs, today])
-  const tooMuch = sim.firstGap > shelf && packs > upperPacks
-  const lim = shelf < 14 ? shelf : 11
-  const days = Array.from({ length: 14 }, (_, i) => addDays(today, i))
-  const state = (i: number): 'reicht' | 'leer' | 'viel' => (!sim.covered[i] ? 'leer' : tooMuch && i >= lim ? 'viel' : 'reicht')
-  const lvl = { reicht: 'gruen', leer: 'rot', viel: 'bernstein' } as const
+  const lead = Math.min(a.leadTimeDays, 59)
+  const day = (i: number) => addDays(today, i)
   const fmtD = (d: string) => `${WEEKDAYS_SHORT[weekdayIdx(d)]} ${fmtDayMonth(d)}`
-  const k = sim.firstGap
-  const text = tooMuch
-    ? `Zu viel: reicht über ${shelf} Tage hinaus`
-    : k >= 14 ? `Reicht über die nächsten 14 Tage (bis ca. ${fmtDate(addDays(today, Math.min(59, k - 1)))})`
-      : `${k > 0 ? `Reicht bis ${fmtD(addDays(today, k - 1))} (${k} ${k === 1 ? 'Tag' : 'Tage'})` : 'Reicht heute nicht mehr'} · Leer ab ${k === 0 ? 'heute' : fmtD(addDays(today, k))}`
+  const firstLuecke = Array.from({ length: lead }, (_, i) => i).find((i) => !sim.covered[i]) ?? -1
+  let afterEnd = lead
+  while (afterEnd < 60 && sim.covered[afterEnd]) afterEnd++
+  const tooMuch = afterEnd > shelf + lead && packs > upperPacks
+  const lim = shelf < 14 ? shelf + lead : 11
+  const state = (i: number): 'reicht' | 'leer' | 'viel' | 'luecke' => (i < lead && !sim.covered[i] ? 'luecke' : !sim.covered[i] ? 'leer' : tooMuch && i >= lim ? 'viel' : 'reicht')
+  const lvl = { reicht: 'gruen', leer: 'rot', viel: 'bernstein', luecke: 'rot' } as const
+  const word = { reicht: 'reicht', leer: 'leer', viel: 'zu viel', luecke: 'Lieferlücke' } as const
+  const del = day(lead)
+  const dText = `${a.leadTimeDays} ${a.leadTimeDays === 1 ? 'Tag' : 'Tage'}`
+  const after = packs > 0 ? ` · danach reicht es ${afterEnd >= 59 ? 'über die nächsten 14 Tage hinaus' : `bis ca. ${fmtDate(day(afterEnd - 1))}`}` : ''
+  const text = firstLuecke >= 0
+    ? `Leer ab ${fmtD(day(firstLuecke))} · Lieferung ${fmtD(del)}${after}`
+    : tooMuch ? `Zu viel: reicht über ${shelf} Tage hinaus · Lieferung ${fmtD(del)}`
+      : afterEnd >= 14 ? `Reicht über die nächsten 14 Tage (bis ca. ${fmtDate(day(Math.min(59, afterEnd - 1)))})${packs > 0 && lead < 14 ? ` · Lieferung ${fmtD(del)}` : ''}`
+        : `Reicht bis ${fmtD(day(afterEnd - 1))} (${afterEnd} ${afterEnd === 1 ? 'Tag' : 'Tage'}) · Leer ab ${fmtD(day(afterEnd))}${packs > 0 ? ` · Lieferung ${fmtD(del)}` : ''}`
+  const explain = firstLuecke >= 0
+    ? `Der Bestand reicht ${firstLuecke > 0 ? `nur bis ${fmtD(day(firstLuecke - 1))}` : 'heute nicht mehr'}. Die Lieferung kommt erst am ${fmtD(del)} (Lieferzeit ${dText}). ${fmtD(day(firstLuecke))}${lead - 1 > firstLuecke ? ` bis ${fmtD(day(lead - 1))}` : ''} ${lead - 1 > firstLuecke ? 'können' : 'kann'} auch eine größere Menge nicht mehr retten.`
+    : ''
   return (
     <div data-stockstrip>
-      <p className="stk-text"><Signal level={tooMuch ? 'bernstein' : k >= 14 ? 'gruen' : 'rot'} size={20} /> <b>{text}</b></p>
+      <p className="stk-text"><Signal level={firstLuecke >= 0 ? 'rot' : tooMuch ? 'bernstein' : afterEnd >= 14 ? 'gruen' : 'rot'} size={20} /> <b>{text}</b></p>
       <div className="stk-row" role="img" aria-label={text}>
-        {days.map((d, i) => {
+        {Array.from({ length: 14 }, (_, i) => {
           const st = state(i)
           return (
-            <div key={d} className={`stk-tile ${st} ${i === 0 ? 'today' : ''}`} title={`${fmtD(d)}: ${st === 'reicht' ? 'reicht' : st === 'leer' ? 'leer' : 'zu viel'}`}>
-              <b>{i === 0 ? 'Heute' : WEEKDAYS_SHORT[weekdayIdx(d)]}</b><span>{Number(d.slice(8, 10))}.</span>
+            <div key={i} className={`stk-tile ${st} ${i === 0 ? 'today' : ''}`} title={`${fmtD(day(i))}: ${word[st]}${i === lead ? ' · Lieferung' : ''}`}>
+              <b>{i === 0 ? 'Heute' : WEEKDAYS_SHORT[weekdayIdx(day(i))]}</b><span>{Number(day(i).slice(8, 10))}.</span>
               <Signal level={lvl[st]} size={16} />
-              <em>{st === 'reicht' ? 'reicht' : st === 'leer' ? 'leer' : 'zu viel'}</em>
+              <em>{word[st]}</em>
+              {i === lead && <i className="stk-del"><Icon name="lkw" size={11} />Lieferung</i>}
             </div>
           )
         })}
       </div>
+      {explain && (
+        <div className="stk-explain">
+          <p>{explain}</p>
+          <Btn size="sm" icon="send" onClick={() => { actions.sendReport(storeId, 'anfrage', `Eillieferung für ${a.name} gewünscht`); toast('Anfrage ans HQ gesendet (Demo)') }}>Eillieferung anfragen (Demo)</Btn>
+        </div>
+      )}
     </div>
   )
 }

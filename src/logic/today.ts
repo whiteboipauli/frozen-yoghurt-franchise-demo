@@ -18,21 +18,36 @@ export interface SalesToday {
   revenue: number
   sizes: { id: string; label: string; n: number }[]
 }
-/** Prognose der Becher bis zur aktuellen Uhrzeit: Tagesprognose je Stunde, die laufende Stunde anteilig */
-export function forecastSoFar(db: Db, storeId: string, today = todayISO(), now = new Date()): number {
+/** Typischer Tagesverlauf (Stunde 10–19): ruhiger Vormittag, Spitze am Mittag, kleines Tief am frühen Nachmittag, zweite Spitze am späten Nachmittag */
+const PROFILE = [0.7, 0.85, 1.2, 1.35, 0.85, 0.8, 1.0, 1.25, 1.2, 0.9]
+export interface HourPoint { hour: number; fc: number; dev: number; act: number; share: number }
+/** Prognose und (Demo-)Verkäufe je Stunde: Prognose = Tagessumme × Tagesverlauf (sonnig = höhere Summe), Verkäufe folgen ihr mit leichter Abweichung (meist ±3 bis ±8 %, einzelne Stunden bis ±12 %) */
+export function hourlyModel(db: Db, storeId: string, today = todayISO(), now = new Date()) {
+  const sd = staffDay(db, storeId, today, today)
+  const n = Math.max(1, sd.close - sd.open)
+  const prof = Array.from({ length: n }, (_, i) => PROFILE[Math.min(PROFILE.length - 1, Math.round((i * (PROFILE.length - 1)) / Math.max(1, n - 1)))])
+  const sum = prof.reduce((a, b) => a + b, 0)
+  const bias = (0.03 + hash01(storeId + today + 'b') * 0.05) * (hash01(storeId + today + 's') < 0.5 ? -1 : 1)
   const frac = now.getHours() + now.getMinutes() / 60
-  let fc = 0
-  for (const h of staffDay(db, storeId, today, today).hours) fc += h.cups * Math.max(0, Math.min(1, frac - h.hour))
-  return fc
+  const hours: HourPoint[] = prof.map((w, i) => {
+    const hour = sd.open + i
+    const fc = (sd.cups * w) / sum
+    const dev = Math.max(-0.12, Math.min(0.12, bias + (hash01(`${storeId}${today}${hour}`) - 0.5) * 0.1))
+    const share = Math.max(0, Math.min(1, frac - hour))
+    return { hour, fc, dev, act: fc * (1 + dev) * share, share }
+  })
+  const fcNow = hours.reduce((a, h) => a + h.fc * h.share, 0)
+  const actNow = hours.reduce((a, h) => a + h.act, 0)
+  return { hours, fcNow, actNow }
 }
-/** Demo: die Verkäufe von heute liegen immer nahe an der Prognose bis jetzt (etwa ±2 bis 8 %) */
+/** Prognose der Becher bis zur aktuellen Uhrzeit */
+export const forecastSoFar = (db: Db, storeId: string, today = todayISO(), now = new Date()): number => hourlyModel(db, storeId, today, now).fcNow
+/** Verkäufe von heute (Demo): folgen der Prognosekurve mit leichter Abweichung */
 export function salesToday(db: Db, storeId: string, today = todayISO()): SalesToday {
   const day = saleDayOf(db, storeId, today)
   if (!day) return { cups: 0, revenue: 0, sizes: [] }
-  const fc = forecastSoFar(db, storeId, today)
   const raw = dayCups(day)
-  const dev = (0.02 + hash01(storeId + today + 'dev') * 0.06) * (hash01(storeId + today + 'sg') < 0.5 ? -1 : 1)
-  const cups = Math.round(fc * (1 + dev))
+  const cups = Math.round(hourlyModel(db, storeId, today).actNow)
   const k = raw > 0 ? cups / raw : 0
   if (k > 0) {
     const sizes = db.recipes.filter((r) => r.kind === 'size').map((r) => ({ id: r.id, label: r.id.slice(-1).toUpperCase(), n: Math.round((day.counts[r.id] ?? 0) * k) })).filter((s) => s.n > 0).sort((a, b) => b.n - a.n || a.label.localeCompare(b.label))

@@ -4,7 +4,7 @@ import { go } from '../lib/router'
 import { planUi } from '../lib/plan-ui'
 import { todayISO, WEEKDAYS_SHORT, weekdayIdx, WEEKDAYS } from '../lib/date'
 import { fmt0, fmtDayMonth, fmtEUR } from '../lib/format'
-import { dayWxIcon, forecastSoFar, salesToday, todayTips, weekOverview } from '../logic/today'
+import { dayWxIcon, hourlyModel, salesToday, todayTips, weekOverview } from '../logic/today'
 import { storeSignals, type SigTask } from '../logic/signals'
 import { absentOn } from '../logic/callouts'
 import { useWeatherStatus, wxKind } from '../logic/weather'
@@ -55,18 +55,14 @@ export function Heute({ storeId }: { storeId: string }) {
   const jumpDay = (d: string) => { planUi.openDay(d); go('/filiale/team/dienstplan') }
   const open = (t: SigTask) => (t.modal ? setCallout(t.modal.replace('callout:', '')) : t.day ? jumpDay(t.day) : go(`/filiale/${t.to}`))
 
-  // Verlauf: bisher (nach Stundengewicht verteilt) und Prognose
-  const { open: oh, close: ch } = openHours(store, today)
+  // Verlauf je Stunde: Prognose (typischer Tagesverlauf) und bisherige Verkäufe, die ihr mit leichter Abweichung folgen
+  const model = useMemo(() => hourlyModel(db, storeId, today), [db, storeId, today])
+  const hrs = model.hours.map((h) => h.hour)
   const nowH = new Date().getHours()
-  const hrs = Array.from({ length: Math.max(1, ch - oh) }, (_, i) => oh + i)
-  const clockIdx = Math.min(hrs.length - 1, Math.max(0, nowH - oh))
-  const fcCum = hrs.reduce<number[]>((a, h) => { const c = sd.hours.find((x) => x.hour === h)?.cups ?? 0; a.push((a[a.length - 1] ?? 0) + c); return a }, [])
-  const wCum = hrs.reduce<number[]>((a, h) => { a.push((a[a.length - 1] ?? 0) + (hours.find((x) => x.hour === h)?.cups ?? 0)); return a }, [])
-  const nowIdx = clockIdx
-  const base = wCum[nowIdx] || 1
-  const actualCum = wCum.map((c) => (sales.cups * c) / base)
-  const fcNow = forecastSoFar(db, storeId, today)
-  const pct = fcNow > 0 && sales.cups > 0 ? Math.round((sales.cups / fcNow - 1) * 100) : null
+  const nowIdx = Math.min(hrs.length - 1, Math.max(0, nowH - hrs[0]))
+  const fcCum = model.hours.map((h) => h.fc)
+  const actualCum = model.hours.map((h) => h.fc * (1 + h.dev))
+  const pct = model.fcNow > 0 && sales.cups > 0 ? Math.round((model.actNow / model.fcNow - 1) * 100) : null
   const avg = sales.cups ? sales.revenue / sales.cups : 0
 
   // Statuszeilen

@@ -54,8 +54,10 @@ export function CockpitPage() {
         </div>
       </div>
       <div className="stack">
-        <RevenueCostCard />
-        <MeldungenCard />
+        <div className="cp-top">
+          <RevenueCostCard />
+          <MeldungenCard />
+        </div>
         <Card title={`${hs.lamps.length} Läden im Überblick`} tour="kpis" right={<span className="muted small">{ok} in Ordnung · {worst.length} mit Hinweis</span>}>
           <div className="lamps">
             {lamps.map((l) => (
@@ -92,7 +94,7 @@ function MeldungenCard() {
       </div>
       {open.length === 0 && <p className="tasks-empty"><Signal level="gruen" size={22} /> Alle Läden sind in Ordnung.</p>}
       <div className="task-group">
-        {open.slice(0, 6).map((c) => (
+        {open.slice(0, 5).map((c) => (
           <div key={c.id} className={`task-row tint-${stLevel(c)}`} role="button" tabIndex={0} onClick={() => go(`/zentrale/fall/${c.storeId}/${c.kind}`)} onKeyDown={(e) => e.key === 'Enter' && go(`/zentrale/fall/${c.storeId}/${c.kind}`)} data-task={c.id}>
             <IconTile icon={ART_ICON[c.art]} level={stLevel(c)} />
             <div className="task-main"><b title={name(c.storeId)}>{name(c.storeId)}</b><span className="mchips"><span className="art-chip">{ART_LABEL[c.art]}</span>{c.auto && <span className="art-chip auto">automatisch erkannt</span>}<span className="faint small">{fmtDate(c.createdOn)}</span></span></div>

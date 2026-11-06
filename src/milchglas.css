@@ -659,3 +659,21 @@ button.big-count { padding: 0; display: flex; align-items: center; gap: 14px; bo
 .art-inv { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; margin-top: 8px; border-radius: var(--r-md); background: var(--tile-bg); border: 1px solid var(--tile-edge); }
 .art-inv .grow { display: flex; flex-direction: column; min-width: 240px; }
 .art-quote { padding: 12px 14px; border-radius: var(--r-md); background: var(--tile-bg); border: 1px solid var(--tile-edge); margin: 8px 0 12px; }
+
+/* HQ-Cockpit: zwei Karten nebeneinander */
+.cp-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.cp-top > .rc-card.expanded { grid-column: 1 / -1; }
+@media (max-width: 1100px) { .cp-top { grid-template-columns: 1fr; } }
+.rc-card.compact .rc-top { grid-template-columns: 1fr !important; gap: 10px !important; }
+.rc-card.compact .rc-total { flex-direction: row; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.rc-card.compact .rc-total .big-num { font-size: 26px; }
+.rc-card.compact .rc-qgrid { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 6px; }
+.rc-card.compact .rc-q { padding: 6px 8px; } .rc-card.compact .rc-q b { font-size: 17px; } .rc-card.compact .rc-q .muted { display: none; }
+.rc-card.compact .rc-qhead .btn { display: none; }
+.cp-top .tasks-card .task-row { padding: 8px 10px; } .cp-top .tasks-card .task-main { min-width: 0; }
+
+.stk-tile { position: relative; }
+.stk-tile.luecke { background: repeating-linear-gradient(135deg, rgba(194, 65, 58, .22) 0 5px, rgba(194, 65, 58, .08) 5px 10px); }
+.stk-del { display: inline-flex; align-items: center; gap: 2px; font-style: normal; font-size: 9.5px; font-weight: 800; color: var(--wine); white-space: nowrap; }
+.stk-explain { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 10px; padding: 10px 12px; border-radius: var(--r-md); background: rgba(194, 65, 58, .08); border: 1px solid rgba(194, 65, 58, .25); font-size: 13.5px; }
+.stk-explain p { flex: 1; min-width: 240px; margin: 0; }

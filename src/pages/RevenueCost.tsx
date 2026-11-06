@@ -77,11 +77,12 @@ export function RevenueCostCard() {
   const totalPrev = rows.reduce((s, r) => s + r.prev, 0)
   const q = quotesOf(total)
   const quotePeriod = span === 'tag' ? `letzter abgeschlossener Monat (${monthLabel(lastFull)})` : span === 'monat' ? monthLabel(ym) : `Jahr ${year}, Januar bis ${monthLabel(lastFull).split(' ')[0]}`
-  const list = all ? rows : rows.slice(0, 8)
+  const compact = !all
+  const list = all ? rows : rows.slice(0, 3)
   const dayOpts = Array.from({ length: 7 }, (_, i) => addDays(today, -1 - i))
 
   return (
-    <section className="glass card in rc-card" data-tour="revcost">
+    <section className={`glass card in rc-card ${compact ? 'compact' : 'expanded'}`} data-tour="revcost">
       <div className="card-head">
         <h2>Umsatz und Kosten</h2>
         <div className="row wrap no-print" style={{ gap: 8 }}>
@@ -105,7 +106,7 @@ export function RevenueCostCard() {
               const lv = costLevel(q[k], targets[k])
               return (
                 <div key={k} className={`rc-q tint-${lv}`} data-cost={k}>
-                  <span className="cap">{COST_LABEL[k]}</span>
+                  <span className="cap">{compact ? COST_SHORT[k] : COST_LABEL[k]}</span>
                   <b>{pct(q[k])}</b>
                   <span className="muted small">Richtwert {fmtPct(targets[k], 0)}</span>
                   {q[k] !== null && <SignalChip level={lv} />}
@@ -122,15 +123,15 @@ export function RevenueCostCard() {
             <tr>
               <th>Laden</th>
               <th className="r">Umsatz</th>
-              {span === 'tag' ? <><th className="r">Vorwoche</th><th className="r">Veränderung</th></> : <>{COST_KEYS.map((k) => <th key={k} className="r">{COST_SHORT[k]}</th>)}<th>Hinweis</th></>}
+              {compact ? <th>{span === 'tag' ? 'Veränderung' : 'Hinweis'}</th> : span === 'tag' ? <><th className="r">Vorwoche</th><th className="r">Veränderung</th></> : <>{COST_KEYS.map((k) => <th key={k} className="r">{COST_SHORT[k]}</th>)}<th>Hinweis</th></>}
             </tr>
           </thead>
           <tbody>
-            <tr className="sum-row">
+            {!compact && <tr className="sum-row">
               <td className="strong">Alle Läden</td><td className="r strong">{fmtEUR(totalRev)}</td>
               {span === 'tag' ? <><td className="r">{fmtEUR(totalPrev)}</td><td className="r strong">{totalPrev > 0 ? `${totalRev >= totalPrev ? '▲' : '▼'} ${signed(((totalRev - totalPrev) / totalPrev) * 100)}` : '–'}</td></>
                 : <>{COST_KEYS.map((k) => <td key={k} className="r"><QuoteCell value={q[k]} target={targets[k]} /></td>)}<td /></>}
-            </tr>
+            </tr>}
             {list.map(({ s, rev, prev, fin, mm }) => {
               const hint = span === 'tag' ? null : worstHint(fin, targets, mm)
               const sq = quotesOf(fin)
@@ -139,7 +140,7 @@ export function RevenueCostCard() {
                 <tr key={s.id} className="clicky" onClick={() => go(`/zentrale/laeden/${s.id}`)} data-store={s.id}>
                   <td className="strong">{s.name}{span !== 'tag' && fin.estimated && !fin.missing && <div className="faint small">Kosten geschätzt</div>}</td>
                   <td className="r">{fmtEUR(rev)}</td>
-                  {span === 'tag' ? <><td className="r muted">{fmtEUR(prev)}</td><td className="r">{d === null ? '–' : `${d >= 0 ? '▲' : '▼'} ${signed(d)}`}</td></>
+                  {compact ? <td>{span === 'tag' ? (d === null ? '–' : `${d >= 0 ? '▲' : '▼'} ${signed(d)}`) : fin.missing ? <span className="muted small">noch keine Meldung</span> : hint ? <span className="hint-cell"><SignalChip level={hint.level} /><span className="small muted">{hint.text}</span></span> : <Signal level="gruen" size={18} />}</td> : span === 'tag' ? <><td className="r muted">{fmtEUR(prev)}</td><td className="r">{d === null ? '–' : `${d >= 0 ? '▲' : '▼'} ${signed(d)}`}</td></>
                     : <>{COST_KEYS.map((k) => <td key={k} className="r"><QuoteCell value={sq[k]} target={targets[k]} /></td>)}<td>{fin.missing ? <span className="muted small">noch keine Meldung</span> : hint ? <span className="hint-cell"><SignalChip level={hint.level} /><span className="small muted">{hint.text}</span></span> : <Signal level="gruen" size={18} />}</td></>}
                 </tr>
               )
@@ -148,8 +149,8 @@ export function RevenueCostCard() {
         </table>
       </div>
       <div className="row" style={{ justifyContent: 'space-between', marginTop: 10, gap: 10, flexWrap: 'wrap' }}>
-        <p className="faint small" style={{ maxWidth: 780 }}>Kosten laut Monatsabschluss der Läden; fehlt er, gilt die Quote des Vormonats („geschätzt“). Das HQ sieht nur Summen und Quoten.{span === 'tag' ? ' Umsatz laut Kasse, netto.' : ''}</p>
-        {rows.length > 8 && <Btn kind="glass" size="sm" onClick={() => setAll(!all)}>{all ? 'Weniger anzeigen' : `Alle ${rows.length} Läden anzeigen`}</Btn>}
+        {!compact && <p className="faint small" style={{ maxWidth: 780 }}>Kosten laut Monatsabschluss der Läden; fehlt er, gilt die Quote des Vormonats („geschätzt“). Das HQ sieht nur Summen und Quoten.{span === 'tag' ? ' Umsatz laut Kasse, netto.' : ''}</p>}
+        {rows.length > 3 && <Btn kind="glass" size="sm" onClick={() => setAll(!all)}>{all ? 'Weniger anzeigen' : 'Alle Läden anzeigen'}</Btn>}
       </div>
       {edit && <TargetsDialog onClose={() => setEdit(false)} />}
     </section>
