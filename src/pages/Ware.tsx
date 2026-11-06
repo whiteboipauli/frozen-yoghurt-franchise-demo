@@ -57,7 +57,7 @@ function ArtikelTab({ storeId }: { storeId: string }) {
   const sugOf = (f: ArticleForecast) => orderPlan(f, db.settings.targetDays).opt
   const needs = (f: ArticleForecast) => reachTone(f) !== 'green' && !f.ordered
 
-  // „Alle Vorschläge bestellen“: Artikel der Zentrale in den Warenkorb, Toppings je Lieferant als bestellt markieren
+  // „Alle Vorschläge bestellen“: Artikel des Headquarters in den Warenkorb, Toppings je Lieferant als bestellt markieren
   const orderAll = () => {
     const plan = orderAllPlan(db, storeId)
     if (!plan.zentrale.length && !plan.suppliers.length) { toast('Es gibt gerade keine offenen Vorschläge.', { tone: '' }); return }
@@ -96,7 +96,7 @@ function ArtikelTab({ storeId }: { storeId: string }) {
             <div key={a.id} className={`n-art clickable tint-${lvl === 'gruen' ? 'none' : lvl}`} data-art={a.id} role="button" tabIndex={0} onClick={() => setOpen(a.id)} onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setOpen(a.id) } }}>
               <button className="n-art-main" onClick={() => setOpen(a.id)} aria-label={`${a.name} – Details und bestellen`}>
                 <ArtBadge article={a} size={48} />
-                <span className="n-art-name"><b title={a.name}>{a.name}</b><span className="muted small" title={yo ? 'von der Zentrale' : a.supplier}>{yo ? 'von der Zentrale' : a.supplier} · Lieferzeit {a.leadTimeDays} {a.leadTimeDays === 1 ? 'Tag' : 'Tage'}</span></span>
+                <span className="n-art-name"><b title={a.name}>{a.name}</b><span className="muted small" title={yo ? 'vom Headquarter' : a.supplier}>{yo ? 'vom Headquarter' : a.supplier} · Lieferzeit {a.leadTimeDays} {a.leadTimeDays === 1 ? 'Tag' : 'Tage'}</span></span>
               </button>
               <FillBar value={reachPct(f)} max={100} level={lvl} label={reach} />
               <span className="n-art-sug" title={sug}>{f.ordered ? <SignalChip level="info">bestellt</SignalChip> : needs(f) ? <b>{sug}</b> : <span className="muted">{sug}</span>}</span>

@@ -54,7 +54,7 @@ export function MyOrdersPage({ storeId }: { storeId: string }) {
   const all = db.centralOrders.filter((o) => o.storeId === storeId).sort((a, b) => b.no.localeCompare(a.no))
   const active = all.filter((o) => isActive(db, o))
   const done = all.filter((o) => !isActive(db, o)).slice(0, 12)
-  const top = db.orders.filter((o) => o.storeId === storeId && o.supplier !== 'Zentrale')
+  const top = db.orders.filter((o) => o.storeId === storeId && o.supplier !== 'Headquarter')
   const topOpen = top.filter((o) => o.status === 'bestellt').sort((a, b) => a.expectedOn.localeCompare(b.expectedOn))
   const topDone = top.filter((o) => o.status === 'geliefert').sort((a, b) => (b.deliveredOn ?? '').localeCompare(a.deliveredOn ?? '')).slice(0, 8)
   const cur = all.find((o) => o.id === open)
@@ -92,7 +92,7 @@ export function MyOrdersPage({ storeId }: { storeId: string }) {
   return (
     <div className="stack n-stack" data-tour="my-orders">
       <section>
-        <h2 className="n-h2">Bestellungen bei der Zentrale</h2>
+        <h2 className="n-h2">Bestellungen beim Headquarter</h2>
         {active.length === 0 ? <Card><Empty icon="box">Gerade ist nichts unterwegs. Neue Bestellungen findest du unter „Artikel“.</Empty></Card> : <div className="order-cards">{active.map(card)}</div>}
       </section>
 

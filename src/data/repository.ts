@@ -203,7 +203,7 @@ export const actions = {
     })
   },
 
-  /* ----- Bestellung bei der Zentrale ----- */
+  /* ----- Bestellung beim Headquarter ----- */
   placeCentralOrder(storeId: string, lines: CoLine[], wishDate: string, note: string): string | null {
     const r = placeCentralOrder(state, storeId, lines, wishDate, note)
     if (!r) return null

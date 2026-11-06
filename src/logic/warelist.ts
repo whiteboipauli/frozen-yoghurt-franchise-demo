@@ -10,7 +10,7 @@ export function articleRows(db: Db, storeId: string, group: StockGroup = 'alle')
 }
 
 export interface OrderAll {
-  /** Von der Zentrale bezogen: kommt in den Warenkorb */
+  /** Vom Headquarter bezogen: kommt in den Warenkorb */
   zentrale: { articleId: string; packs: number }[]
   /** Toppings: je Lieferant als bestellt markieren (mit druckbarer Liste) */
   suppliers: { supplier: string; lines: { articleId: string; name: string; packs: number }[] }[]
@@ -19,10 +19,10 @@ export interface OrderAll {
 export function orderAllPlan(db: Db, storeId: string): OrderAll {
   const items = orderList(db, storeId).filter((i) => i.status === 'offen')
   const bySup = new Map<string, OrderAll['suppliers'][number]>()
-  for (const i of items.filter((x) => x.supplier !== 'Zentrale')) {
+  for (const i of items.filter((x) => x.supplier !== 'Headquarter')) {
     const e = bySup.get(i.supplier) ?? { supplier: i.supplier, lines: [] }
     e.lines.push({ articleId: i.article.id, name: i.article.name, packs: i.packs })
     bySup.set(i.supplier, e)
   }
-  return { zentrale: items.filter((i) => i.supplier === 'Zentrale').map((i) => ({ articleId: i.article.id, packs: i.packs })), suppliers: [...bySup.values()] }
+  return { zentrale: items.filter((i) => i.supplier === 'Headquarter').map((i) => ({ articleId: i.article.id, packs: i.packs })), suppliers: [...bySup.values()] }
 }

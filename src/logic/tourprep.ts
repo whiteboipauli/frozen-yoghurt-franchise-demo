@@ -44,7 +44,7 @@ function tuneDays(db: Db, storeId: string, articleId: string, k: number): Db {
 /**
  * Demo-Vorbereitung für Düsseldorf Carlstadt:
  * – Mango knapp, knapp über der Gelb-Schwelle: der Tour-Verkauf (Becher M + 2× Mango) löst den Alarm aus.
- * – Löffel und Becher M stehen auf der Bestellliste (Artikel der Zentrale), ohne selbst Alarm auszulösen.
+ * – Löffel und Becher M stehen auf der Bestellliste (Artikel des Headquarters), ohne selbst Alarm auszulösen.
  */
 export function tuneMango(db: Db, storeId = 'duesseldorf-carlstadt'): Db {
   if (!db.stores.some((s) => s.id === storeId) || !db.articles.some((a) => a.id === 'mango')) return db
@@ -56,7 +56,7 @@ export function tuneMango(db: Db, storeId = 'duesseldorf-carlstadt'): Db {
   for (let i = 1; i <= 3; i++) c3 += expectedUse(cur, storeId, 'mango', addDays(today, i), today)
   const drop = (2 * portionBase(a)) / (1 - rate)
   cur = setStock(cur, storeId, 'mango', c3 + drop * 0.55)
-  // Artikel der Zentrale: spätester Bestelltag in 2–3 Tagen
+  // Artikel des Headquarters: spätester Bestelltag in 2–3 Tagen
   for (const [id, k] of [['loeffel', 2], ['karamellsauce', 3], ['becher-m', 8]] as const) if (cur.articles.some((x) => x.id === id)) cur = tuneDays(cur, storeId, id, k)
   return cur
 }

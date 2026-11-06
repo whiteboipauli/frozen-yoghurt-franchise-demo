@@ -1,5 +1,5 @@
 import { brand } from '../brand'
-import type { Article, Campaign, CentralOrder, Db, Delivery, Employee, Inventory, Invoice, KnowEntry, Order, Outflow, Post, Recipe, SaleDay, Settings } from './types'
+import type { Article, Campaign, CentralOrder, Db, Delivery, Employee, Inventory, Invoice, KnowEntry, Order, Outflow, Post, Recipe, SaleDay, Settings, Shift } from './types'
 import { defaultSchoolHolidays, legalHolidayOn } from './holidays'
 import { CITY_COORDS, DEMO_STORE, DEMO_STORE_2, DEMO_STORE_3, DEMO_STORES, OWN_STORES, seedStores, STORE_CFG, TOUR_STORE } from './stores'
 import { carrierFor, makeTracking } from '../logic/shipping'
@@ -15,9 +15,9 @@ import { formatInvoiceNumber, makeInvoice } from '../logic/invoice'
 import { goodsOf } from '../logic/finance'
 import { feeFor, lastMonths, makeFeeInvoice, monthBounds, revCtx, revenueNet } from '../logic/fees'
 import { candidatesForGap } from '../logic/staffplan'
-import { dayStaffing } from '../logic/staffing'
+import { dayStaffing, staffDay } from '../logic/staffing'
 
-export const DB_VERSION = 20
+export const DB_VERSION = 22
 export const HISTORY_DAYS = 90
 /** Verkaufshistorie: 13 Monate (inkl. Vorjahr) */
 export const SALES_DAYS = 400
@@ -60,7 +60,7 @@ const TOPPINGS: TopSpec[] = [
 
 export function seedArticles(): Article[] {
   const y = (id: string, sku: string, name: string, category: string, unit: 'kg' | 'Stück', packSize: number, price: number, vat: number, portionGrams?: number): Article => ({
-    id, sku, name, category, source: 'zentrale', supplier: 'Zentrale', unit, packSize, packPrice: price, vatRate: vat, available: true, leadTimeDays: ({ pulver: 2, 'becher-s': 2, 'becher-m': 2, 'becher-l': 2, deckel: 2 } as Record<string, number>)[id] ?? 3, portionGrams,
+    id, sku, name, category, source: 'zentrale', supplier: 'Headquarter', unit, packSize, packPrice: price, vatRate: vat, available: true, leadTimeDays: ({ pulver: 2, 'becher-s': 2, 'becher-m': 2, 'becher-l': 2, deckel: 2 } as Record<string, number>)[id] ?? 3, portionGrams,
   })
   // Preise so kalibriert, dass Wareneinsatz (~27 %) und Verpackung (~3,7 %) vom Umsatz zu den Richtwerten des HQ passen
   const cal = (a: Article): Article => ({ ...a, packPrice: Math.round(a.packPrice * (a.category === 'Becher' || a.category === 'Zubehör' ? PACK_CAL : GOODS_CAL) * 100) / 100 })
@@ -298,8 +298,8 @@ export function buildSeed(wxByLoc?: Record<string, WxMap | null>): Db {
     }
   }
 
-  /* ---------- Bestellungen der Zentrale → Bestellungen beim HQ ---------- */
-  const yoIds = new Set(orders.filter((o) => o.supplier === 'Zentrale').map((o) => o.id))
+  /* ---------- Bestellungen des Headquarters → Bestellungen beim HQ ---------- */
+  const yoIds = new Set(orders.filter((o) => o.supplier === 'Headquarter').map((o) => o.id))
   const centralOrders: CentralOrder[] = []
   const coOf = new Map<string, CentralOrder>()
   for (const o of [...orders.filter((x) => yoIds.has(x.id))].sort((a, b) => a.orderedOn.localeCompare(b.orderedOn) || a.id.localeCompare(b.id))) {
@@ -552,27 +552,48 @@ export function buildSeed(wxByLoc?: Record<string, WxMap | null>): Db {
   return tuneMango(withHr, TOUR_STORE)
 }
 
-/** Demo Dienstplan: in der aktuellen Woche (ab heute) mindestens 5 Lücken, in der nächsten mindestens 4, verteilt auf verschiedene Tage (höchstens 2 Zeitfenster je Tag) */
+/**
+ * Demo Dienstplan (Carlstadt): ab heute für die aktuelle und die nächste Woche neu aufgebaut. Je Wochentag ein festes Muster:
+ * Mo und Mi komplett besetzt, sonst Lücken zu unterschiedlichen Uhrzeiten (Do und Sa fehlen zeitweise 2 Personen).
+ * Die Schichten decken den Bedarf je Stunde genau ab; Personen mit den wenigsten Wochenstunden kommen zuerst dran.
+ */
 function shapeGaps(db: Db, sid: string, today: string) {
   const wk = addDays(today, -weekdayIdx(today))
-  const windows = (date: string, shifts = db.shifts) => dayStaffing(db, sid, date, today, shifts).gaps.length
-  const dealWeek = (from: string, target: number) => {
-    const days = Array.from({ length: 7 }, (_, i) => addDays(from, i)).filter((d) => d >= today)
-    let total = days.reduce((n, d) => n + windows(d), 0)
-    for (let round = 0; round < 2 && total < target; round++) {
-      for (const d of days) {
-        if (total >= target) break
-        if (windows(d) > round) continue
-        const mine = db.shifts.filter((s) => s.storeId === sid && s.date === d && s.status !== 'ausfall')
-        for (const s of mine) {
-          const rest = db.shifts.filter((x) => x.id !== s.id)
-          if (windows(d, rest) > windows(d)) { db.shifts = rest; total++; break }
+  const emps = db.employees.filter((e: Employee) => e.storeId === sid && e.active)
+  const PAT: ([number, number, number] | null)[] = [null, [12, 15, 1], null, [12, 16, 2], [15, 19, 1], [11, 15, 2], [17, 20, 1]]
+  const days = [...Array.from({ length: 7 }, (_, i) => addDays(wk, i)), ...Array.from({ length: 7 }, (_, i) => addDays(wk, 7 + i))].filter((d) => d >= today)
+  const mine = (x: Shift) => x.storeId === sid && days.includes(x.date) && x.status !== 'ausfall'
+  const added: Shift[] = []
+  const load = new Map<string, number>()
+  let n = 0
+  for (const date of days) {
+    const sd = staffDay(db, sid, date, today)
+    const pat = PAT[weekdayIdx(date)]
+    const target = (h: number) => {
+      const need = sd.need[h] ?? 0
+      return pat && h >= pat[0] && h < pat[1] ? Math.max(0, need - Math.min(pat[2], Math.max(1, need - 1))) : need
+    }
+    const week = addDays(date, -weekdayIdx(date))
+    const busy: { id: string; from: number; to: number }[] = []
+    const maxT = Math.max(0, ...Array.from({ length: sd.close - sd.open }, (_, i) => target(sd.open + i)))
+    for (let layer = 1; layer <= maxT; layer++) {
+      let h = sd.open
+      while (h < sd.close) {
+        if (target(h) < layer) { h++; continue }
+        let e = h
+        while (e < sd.close && target(e) >= layer && e - h < 8) e++
+        const pool = emps.filter((p) => !busy.some((b) => b.id === p.id)).sort((a, b) => (load.get(`${a.id}|${week}`) ?? 0) - (load.get(`${b.id}|${week}`) ?? 0) || a.id.localeCompare(b.id))
+        const who = pool[0]
+        if (who) {
+          busy.push({ id: who.id, from: h, to: e })
+          load.set(`${who.id}|${week}`, (load.get(`${who.id}|${week}`) ?? 0) + (e - h))
+          added.push({ id: `sh-demo-${date}-${n++}`, storeId: sid, empId: who.id, date, start: h, end: e, locked: false, why: 'Demo-Dienstplan' })
         }
+        h = e
       }
     }
   }
-  dealWeek(wk, 5)
-  dealWeek(addDays(wk, 7), 4)
+  db.shifts = [...db.shifts.filter((x) => !mine(x)), ...added]
 }
 
 /** Demo-Verfügbarkeiten: Jede Lücke der nächsten 14 Tage lässt sich mit mindestens einer Person ohne Warnung schließen (plus einige mit Warnung) */
@@ -608,7 +629,7 @@ function seedPosts(today: string): Post[] {
   return [
     { id: 'po1', title: 'Winter-Special startet am 1. Dezember', text: 'Ab 1. Dezember gibt es unser Winter-Special mit neuem Crumble. Bitte plant rechtzeitig Biscoff und Becher L ein – die Bestellvorschläge berücksichtigen die Aktion schon.', important: true, createdOn: addDays(today, -2), to: [], readBy: { duisburg: addDays(today, -1) } },
     { id: 'po2', title: 'Neue Portionsgrößen-Karte im Handbuch', text: 'Die aktualisierte Karte zu Portionsgrößen und Toppings liegt im Handbuch. Bitte kurz mit dem Team durchgehen.', important: false, createdOn: addDays(today, -6), to: [], readBy: { [TOUR_STORE]: addDays(today, -5), kiel: addDays(today, -3) } },
-    { id: 'po3', title: 'Erinnerung: Monatsinventur', text: 'Bitte zählt die Artikel der Zentrale am letzten Tag des Monats (ab dem drittletzten Tag möglich) – blind, ohne Vorgabe. Danke!', important: false, createdOn: addDays(today, -1), to: [TOUR_STORE, 'koeln-campus', 'hamburg-rathaus', 'musterstadt'], readBy: {} },
+    { id: 'po3', title: 'Erinnerung: Monatsinventur', text: 'Bitte zählt die Artikel des Headquarters am letzten Tag des Monats (ab dem drittletzten Tag möglich) – blind, ohne Vorgabe. Danke!', important: false, createdOn: addDays(today, -1), to: [TOUR_STORE, 'koeln-campus', 'hamburg-rathaus', 'musterstadt'], readBy: {} },
   ]
 }
 function seedCampaigns(today: string): Campaign[] {
@@ -616,9 +637,9 @@ function seedCampaigns(today: string): Campaign[] {
   const dec1 = today <= `${y}-12-24` ? `${y}-12-01` : `${y + 1}-12-01`
   const end = `${dec1.slice(0, 4)}-12-24`
   return [
-    { id: 'ca1', title: 'Winter-Special mit neuem Crumble', text: 'Neue Sorte „Winter-Crumble“ mit Biscoff und Oreo, dazu die große Becher-Größe im Fokus.', from: dec1, to: end, articleIds: ['biscoff', 'oreo', 'becher-l'], extraPct: 25, social: 'Der Winter schmeckt nach Crunch! ❄️ Unser neues Winter-Special mit Biscoff-Crumble – ab 1. Dezember bei der Zentrale. #zentrale #frozenyoghurt' },
-    { id: 'ca2', title: 'Mango-Wochen', text: 'Zwei Wochen lang Mango im Fokus – frisch, fruchtig, farbenfroh.', from: addDays(today, 9), to: addDays(today, 22), articleIds: ['mango', 'becher-m'], extraPct: 30, social: 'Zwei Wochen Mango-Glück 🥭 Jetzt Becher mit extra Mango bei der Zentrale. #zentrale #mango' },
-    { id: 'ca3', title: 'Black-Week: Gratis-Topping', text: 'Zum Becher L gibt es ein Topping gratis – das lockt mehr große Becher.', from: addDays(today, 18), to: addDays(today, 24), articleIds: ['becher-l', 'loeffel', 'schokosauce'], extraPct: 20, social: 'Black Week bei der Zentrale 🖤 Zum Becher L ein Topping gratis. Nur eine Woche! #zentrale #blackweek' },
+    { id: 'ca1', title: 'Winter-Special mit neuem Crumble', text: 'Neue Sorte „Winter-Crumble“ mit Biscoff und Oreo, dazu die große Becher-Größe im Fokus.', from: dec1, to: end, articleIds: ['biscoff', 'oreo', 'becher-l'], extraPct: 25, social: 'Der Winter schmeckt nach Crunch! ❄️ Unser neues Winter-Special mit Biscoff-Crumble – ab 1. Dezember beim Headquarter. #zentrale #frozenyoghurt' },
+    { id: 'ca2', title: 'Mango-Wochen', text: 'Zwei Wochen lang Mango im Fokus – frisch, fruchtig, farbenfroh.', from: addDays(today, 9), to: addDays(today, 22), articleIds: ['mango', 'becher-m'], extraPct: 30, social: 'Zwei Wochen Mango-Glück 🥭 Jetzt Becher mit extra Mango beim Headquarter. #zentrale #mango' },
+    { id: 'ca3', title: 'Black-Week: Gratis-Topping', text: 'Zum Becher L gibt es ein Topping gratis – das lockt mehr große Becher.', from: addDays(today, 18), to: addDays(today, 24), articleIds: ['becher-l', 'loeffel', 'schokosauce'], extraPct: 20, social: 'Black Week beim Headquarter 🖤 Zum Becher L ein Topping gratis. Nur eine Woche! #zentrale #blackweek' },
   ]
 }
 function seedKnowledge(): KnowEntry[] {

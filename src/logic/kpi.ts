@@ -84,7 +84,7 @@ function compute(db: Db, storeId: string, today: string): Kpi {
   const lCups = w28.reduce((s, d) => s + (d.counts['froyo-l'] ?? 0), 0)
   const tops = w28.reduce((s, d) => s + Object.values(d.toppings).reduce((a, b) => a + b, 0), 0)
 
-  // Wareneinsatz: von der Zentrale bezogene Ware zu HQ-Preisen ÷ verkaufte Becher (56 Tage glättet die Lieferrhythmen)
+  // Wareneinsatz: vom Headquarter bezogene Ware zu HQ-Preisen ÷ verkaufte Becher (56 Tage glättet die Lieferrhythmen)
   const from56 = addDays(today, -56)
   const price = new Map(db.articles.map((a) => [a.id, a]))
   let goods = 0

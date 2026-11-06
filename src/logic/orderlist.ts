@@ -44,7 +44,7 @@ export function orderList(db: Db, storeId: string, extra: Record<string, number>
     for (const l of o.lines) {
       const a = db.articles.find((x) => x.id === l.articleId)
       if (!a) continue
-      done.push({ key: `d|${o.id}|${a.id}`, article: a, packs: l.packs, qty: l.packs * packBase(a), supplier: o.supplier === 'Zentrale' ? 'Zentrale' : a.supplier, latestOrderDate: null, light: 'green', status: o.status === 'geliefert' ? 'geliefert' : 'bestellt', orderId: o.id })
+      done.push({ key: `d|${o.id}|${a.id}`, article: a, packs: l.packs, qty: l.packs * packBase(a), supplier: o.supplier === 'Headquarter' ? 'Headquarter' : a.supplier, latestOrderDate: null, light: 'green', status: o.status === 'geliefert' ? 'geliefert' : 'bestellt', orderId: o.id })
     }
   }
   for (const c of db.centralOrders) {
@@ -52,7 +52,7 @@ export function orderList(db: Db, storeId: string, extra: Record<string, number>
     for (const l of c.lines) {
       const a = db.articles.find((x) => x.id === l.articleId)
       if (!a) continue
-      done.push({ key: `c|${c.id}|${a.id}`, article: a, packs: packsOf(l), qty: packsOf(l) * packBase(a), supplier: 'Zentrale', latestOrderDate: null, light: 'green', status: c.status === 'eingegangen' || c.status === 'bestätigt' || c.status === 'versendet' ? 'bestellt' : 'geliefert', orderId: c.id })
+      done.push({ key: `c|${c.id}|${a.id}`, article: a, packs: packsOf(l), qty: packsOf(l) * packBase(a), supplier: 'Headquarter', latestOrderDate: null, light: 'green', status: c.status === 'eingegangen' || c.status === 'bestätigt' || c.status === 'versendet' ? 'bestellt' : 'geliefert', orderId: c.id })
     }
   }
   return [...open, ...done]

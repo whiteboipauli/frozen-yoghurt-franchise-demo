@@ -19,7 +19,7 @@ const unitText = (a: OrderItem['article'], qty: number) =>
 const sentence = (i: OrderItem, packs: number, sup: string) => {
   const a = i.article
   const ra = reachAfter(i, packs)
-  const who = a.supplier === 'Zentrale' ? 'bei der Zentrale' : `bei ${a.supplier}`
+  const who = a.supplier === 'Headquarter' ? 'beim Headquarter' : `bei ${a.supplier}`
   const when = i.status !== 'offen' || ra === null ? '' : ` · reicht dann bis ca. ${fmtDayMonth(addDays(todayISO(), Math.round(ra)))} (${Math.round(ra)} Tage)`
   void sup
   return `${a.name} · ${packs} Packung${packs === 1 ? '' : 'en'} ${who}${when}`
@@ -45,7 +45,7 @@ export function OrdersPage({ storeId }: { storeId: string }) {
     toast(`${i.article.name} als bestellt abgehakt`)
   }
   const toCart = () => {
-    const lines = items.filter((i) => i.supplier === 'Zentrale' && i.status === 'offen').map((i) => ({ articleId: i.article.id, packs: packsOf(i) }))
+    const lines = items.filter((i) => i.supplier === 'Headquarter' && i.status === 'offen').map((i) => ({ articleId: i.article.id, packs: packsOf(i) }))
     if (!lines.length) return
     cart.fill(storeId, lines)
     toast('Vorgeschlagene Mengen liegen im Warenkorb', { action: { label: 'Zum Warenkorb', onClick: () => go('/filiale/bestellen') } })
@@ -62,11 +62,11 @@ export function OrdersPage({ storeId }: { storeId: string }) {
         {items.length === 0 && <Card><Empty icon="check">Nichts zu bestellen – alles reicht aus.</Empty></Card>}
         {suppliers.map((sup, gi) => {
           const list = items.filter((i) => i.supplier === sup).sort((a, b) => Number(a.status !== 'offen') - Number(b.status !== 'offen') || (a.reach ?? 999) - (b.reach ?? 999))
-          const yo = sup === 'Zentrale'
+          const yo = sup === 'Headquarter'
           const openYo = list.filter((i) => i.status === 'offen').length
           return (
             <Card key={sup} i={gi} tour={yo ? 'orderlist-zentrale' : undefined}
-              title={<>{yo ? 'Von der Zentrale bezogen' : sup}{yo && <Info text="Becher, Pulver, Löffel und Zubehör bestellst du beim HQ. „In den Warenkorb“ übernimmt die vorgeschlagenen Mengen – dort schickst du die Bestellung ab." />}<Pill>{list.length} Position{list.length > 1 ? 'en' : ''}</Pill></>}
+              title={<>{yo ? 'Vom Headquarter bezogen' : sup}{yo && <Info text="Becher, Pulver, Löffel und Zubehör bestellst du beim HQ. „In den Warenkorb“ übernimmt die vorgeschlagenen Mengen – dort schickst du die Bestellung ab." />}<Pill>{list.length} Position{list.length > 1 ? 'en' : ''}</Pill></>}
               right={yo && <Btn kind="cta" icon="cart" disabled={!openYo} onClick={toCart} data-tour="to-cart">Alles in den Warenkorb</Btn>}>
               {list.map((i) => {
                 const a = i.article
@@ -74,7 +74,7 @@ export function OrdersPage({ storeId }: { storeId: string }) {
                 const done = i.status !== 'offen'
                 return (
                   <div key={i.key} className={`ol-item ${done ? 'done' : ''}`}>
-                    <button className={`check ${done ? 'on' : ''}`} aria-label={`${a.name} als bestellt abhaken`} disabled={done || yo} title={yo ? 'Artikel der Zentrale bestellst du über den Warenkorb' : undefined} style={yo && !done ? { opacity: 0.35 } : undefined} onClick={() => order(i)}><Icon name="check" size={20} stroke={3} /></button>
+                    <button className={`check ${done ? 'on' : ''}`} aria-label={`${a.name} als bestellt abhaken`} disabled={done || yo} title={yo ? 'Artikel des Headquarters bestellst du über den Warenkorb' : undefined} style={yo && !done ? { opacity: 0.35 } : undefined} onClick={() => order(i)}><Icon name="check" size={20} stroke={3} /></button>
                     <div>
                       <h3><span style={{ marginRight: 8 }}>{artEmoji(a)}</span>{a.name}<span className="muted small" style={{ fontWeight: 500 }}> · {unitText(a, packs * packBase(a))}</span></h3>
                       <p className="ol-sent">{sentence(i, packs, sup)}</p>
@@ -106,7 +106,7 @@ export function OrdersPage({ storeId }: { storeId: string }) {
             {showDone && done.map((i) => (
               <div key={i.key} className="ol-item done-row">
                 <span className="check on"><Icon name="check" size={18} stroke={3} /></span>
-                <div><h3><span style={{ marginRight: 8 }}>{artEmoji(i.article)}</span>{i.article.name}</h3><p>{i.packs} Packung{i.packs > 1 ? 'en' : ''} · {i.supplier === 'Zentrale' ? 'von der Zentrale bezogen' : i.supplier}</p></div>
+                <div><h3><span style={{ marginRight: 8 }}>{artEmoji(i.article)}</span>{i.article.name}</h3><p>{i.packs} Packung{i.packs > 1 ? 'en' : ''} · {i.supplier === 'Headquarter' ? 'vom Headquarter bezogen' : i.supplier}</p></div>
                 <span /><span />
                 <div style={{ textAlign: 'right' }}>{i.status === 'bestellt' ? <Pill tone="blue">bestellt</Pill> : <Pill tone="green">geliefert</Pill>}</div>
               </div>
@@ -121,7 +121,7 @@ export function OrdersPage({ storeId }: { storeId: string }) {
         <p>Stand: {fmtDate(todayISO())} · {openCount} offene Position(en)</p>
         {suppliers.map((sup) => (
           <div key={sup}>
-            <h2>{sup === 'Zentrale' ? 'Von der Zentrale bezogen' : sup}</h2>
+            <h2>{sup === 'Headquarter' ? 'Vom Headquarter bezogen' : sup}</h2>
             <table>
               <thead><tr><th>Artikel</th><th className="r">Packungen</th><th>Menge</th><th>Spätestens bestellen</th><th>Dringlichkeit</th><th>Status</th></tr></thead>
               <tbody>

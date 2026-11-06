@@ -72,7 +72,7 @@ export function ForecastPage({ storeId }: { storeId: string }) {
             <span role="listitem"><i style={{ background: 'var(--warn)' }} />unter 7 Tage</span>
             <span role="listitem"><i style={{ background: 'var(--bad)' }} />unter 3 Tage – kritisch</span>
             <span role="listitem"><i className="dot-cart"><Icon name="cart" size={10} stroke={2.6} /></i>spätestens bestellen</span>
-            <span role="listitem" className="faint">Von der Zentrale bezogene Artikel: nur grobe Reichweite, keine genauen Mengen</span>
+            <span role="listitem" className="faint">Vom Headquarter bezogene Artikel: nur grobe Reichweite, keine genauen Mengen</span>
           </div>
         </Card>
 

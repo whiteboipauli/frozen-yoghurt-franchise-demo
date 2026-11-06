@@ -82,7 +82,7 @@ export function inventoryAlerts(db: Db, storeId: string): Alert[] {
   const st = inventoryState(db, storeId, today)
   const out: Alert[] = []
   if (!reminders.isOn('inventory')) return out
-  if (st.special) out.push({ key: `${st.special.id}`, level: 'red', title: 'Sonder-Inventur vom HQ angefordert', text: 'Bitte die Artikel der Zentrale jetzt zählen.', to: '/filiale/inventur', storeId })
+  if (st.special) out.push({ key: `${st.special.id}`, level: 'red', title: 'Sonder-Inventur vom HQ angefordert', text: 'Bitte die Artikel des Headquarters jetzt zählen.', to: '/filiale/inventur', storeId })
   if (st.reminder) out.push({ key: `${st.reminder.id}`, level: 'yellow', title: 'Erinnerung vom HQ: Inventur', text: 'Die Monatsinventur ist noch offen.', to: '/filiale/inventur', storeId })
   if (st.status === 'überfällig') out.push({ key: `${today}|${storeId}|inv-late`, level: 'red', title: 'Erinnerung: Monatsinventur überfällig', text: 'Die Monatsinventur wurde bis zum 3. nicht gezählt. Bitte jetzt zählen.', to: '/filiale/inventur', storeId })
   return out
@@ -102,7 +102,7 @@ export function deliveryAlerts(db: Db, storeId: string): Alert[] {
   const today = todayISO()
   const list = db.deliveries.filter((d) => d.storeId === storeId && d.bookedBy === 'zentrale' && !d.confirmed && d.date <= today)
   if (!list.length) return []
-  return [{ key: `${today}|${storeId}|delivery`, level: 'yellow', title: 'Erinnerung: Lieferung angekommen', text: 'Bitte den Empfang der Lieferung von der Zentrale bestätigen.', to: '/filiale/ware/bestellungen', storeId }]
+  return [{ key: `${today}|${storeId}|delivery`, level: 'yellow', title: 'Erinnerung: Lieferung angekommen', text: 'Bitte den Empfang der Lieferung vom Headquarter bestätigen.', to: '/filiale/ware/bestellungen', storeId }]
 }
 
 /** Erinnerung: Bis morgen bestellen (spätester Bestelltag ist heute oder morgen) */

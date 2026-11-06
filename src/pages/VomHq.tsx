@@ -42,7 +42,7 @@ export function VomHqPage({ storeId, tab }: { storeId: string; tab: HqTab }) {
   const cases = storeCases(db, storeId)
   return (
     <>
-      <PageHead title="Vom HQ" hint="Nachrichten, Aktionen und Handbuch von der Zentrale." right={
+      <PageHead title="Vom HQ" hint="Nachrichten, Aktionen und Handbuch vom Headquarter." right={
         <div className="row wrap" style={{ gap: 10 }}>
           <Btn icon="send" onClick={() => setDlg(true)} data-tour="report-btn">Meldung an HQ</Btn>
           <Tabs<HqTab> value={tab} onChange={(t) => go(`/filiale/hq/${t}`)} tour="hq-tabs" options={[{ value: 'pinnwand', icon: 'megafon', label: unread ? `Pinnwand (${unread})` : 'Pinnwand' }, { value: 'aktionen', label: 'Aktionen' }, { value: 'wissen', label: 'Handbuch' }]} />

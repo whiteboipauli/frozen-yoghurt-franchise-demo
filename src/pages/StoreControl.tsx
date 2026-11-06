@@ -76,7 +76,7 @@ export function StoreControlPage({ storeId, tab = 'uebersicht' }: { storeId: str
         </>}
         {tab === 'warenabgleich' && <div data-tour="checks-wrap"><ShrinkagePage storeId={s.id} /></div>}
         {tab === 'inventuren' && <>
-        <Card title="Von der Zentrale bezogene Artikel: gezählt und rechnerisch" i={3} right={lastInv && <span className="fx-chip">Monatsinventur vom {fmtDate(stichtagOf(lastInv))}{countedLate(lastInv) ? ` · gezählt am ${fmtDate(lastInv.date)}` : ''}</span>}>
+        <Card title="Vom Headquarter bezogene Artikel: gezählt und rechnerisch" i={3} right={lastInv && <span className="fx-chip">Monatsinventur vom {fmtDate(stichtagOf(lastInv))}{countedLate(lastInv) ? ` · gezählt am ${fmtDate(lastInv.date)}` : ''}</span>}>
           <table className="tbl">
             <thead><tr><th>Artikel</th><th className="r">Gezählt</th><th className="r">Soll am Zähltag</th><th className="r">Differenz</th><th className="r">Rechnerisch jetzt</th></tr></thead>
             <tbody>

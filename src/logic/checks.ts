@@ -31,6 +31,8 @@ const FX: Record<string, Partial<Record<'powder' | 'sizeL' | 'sizeS' | 'accessor
   [DEMO_STORE_2]: { powder: 14, sizeL: 14, sizeS: -13 },
   [DEMO_STORE_3]: { accessory: 38, soldOver: 11, noBon: 7.5 },
 }
+/** Demo: stark unter Prognose liegende Läden (Faktor Ist/Prognose) */
+export const demoForecastFactor = (storeId: string) => FX[storeId]?.forecast ?? 1
 const worst = (...l: Light[]): Light => (l.includes('red') ? 'red' : l.includes('yellow') ? 'yellow' : 'green')
 const nf1 = (n: number) => new Intl.NumberFormat('de-DE', { maximumFractionDigits: 1 }).format(n)
 

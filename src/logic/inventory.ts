@@ -2,7 +2,7 @@ import type { Article, Db, HqRequest, Inventory } from '../data/types'
 import { addDays, todayISO } from '../lib/date'
 import { CUP_IDS, POWDER_ID, type Light } from './forecast'
 
-/** Alle Artikel der Zentrale müssen monatlich gezählt werden; Toppings optional */
+/** Alle Artikel des Headquarters müssen monatlich gezählt werden; Toppings optional */
 export const zentraleArticles = (db: Pick<Db, 'articles'>) => db.articles.filter((a) => a.source === 'zentrale')
 export const toppingArticles = (db: Pick<Db, 'articles'>) => db.articles.filter((a) => a.source === 'extern')
 

@@ -4,7 +4,7 @@ import { go } from '../lib/router'
 import { planUi } from '../lib/plan-ui'
 import { todayISO, WEEKDAYS_SHORT, weekdayIdx, WEEKDAYS } from '../lib/date'
 import { fmt0, fmtDayMonth, fmtEUR } from '../lib/format'
-import { forecastSoFar, salesToday, todayTips, weekOverview } from '../logic/today'
+import { dayWxIcon, forecastSoFar, salesToday, todayTips, weekOverview } from '../logic/today'
 import { storeSignals, type SigTask } from '../logic/signals'
 import { absentOn } from '../logic/callouts'
 import { useWeatherStatus, wxKind } from '../logic/weather'
@@ -79,6 +79,7 @@ export function Heute({ storeId }: { storeId: string }) {
     { icon: 'paket', level: orderT ? orderT.level : 'gruen', text: orderT ? orderT.title : 'Alles ausreichend da', go: () => go('/filiale/ware/artikel') },
   ]
   const maxCups = Math.max(1, ...week.map((d) => d.cups))
+  const meanCups = week.reduce((n, d) => n + d.cups, 0) / Math.max(1, week.length)
   const now = new Date()
   const dateTxt = new Intl.DateTimeFormat('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now)
 
@@ -140,7 +141,7 @@ export function Heute({ storeId }: { storeId: string }) {
                 <button key={d.date} className={`n-day tint-${staff.l} ${d.date === today ? 'is-today' : ''}`} onClick={() => jumpDay(d.date)} aria-label={`${WEEKDAYS[weekdayIdx(d.date)]} ${fmtDayMonth(d.date)}: ${staff.t}`}>
                   <b>{d.date === today ? 'Heute' : WEEKDAYS_SHORT[weekdayIdx(d.date)]}</b>
                   <span className="faint small">{fmtDayMonth(d.date)}{(hol || fer) && <Icon name="kalender-warnung" size={14} />}</span>
-                  <Icon name={ww ? wxKind(ww).icon : 'wx-none'} size={26} stroke={1.6} />
+                  <Icon name={dayWxIcon(ww, d.cups, meanCups)} size={26} stroke={1.6} />
                   <span className="n-cups"><Icon name="becher" size={15} />{fmt0(d.cups)}<small> Becher</small></span>
                   <span className="cup-bar"><i style={{ width: `${(d.cups / maxCups) * 100}%` }} /></span>
                   <span className={`n-staff tone-${staff.l}`}><Signal level={staff.l} size={18} variant={undefined} /><span>{staff.t}</span></span>

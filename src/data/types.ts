@@ -8,7 +8,7 @@ export interface Article {
   name: string
   category: Category | string
   source: Source
-  supplier: string // 'Zentrale' oder Lieferantenname
+  supplier: string // 'Headquarter' oder Lieferantenname
   unit: Unit
   /** Packungsgröße in der Einheit (kg bzw. Stück) */
   packSize: number
@@ -17,11 +17,11 @@ export interface Article {
   leadTimeDays: number
   /** Nettopreis pro Packung in € */
   packPrice: number
-  /** Katalog des HQ (nur Artikel der Zentrale) */
+  /** Katalog des HQ (nur Artikel des Headquarters) */
   sku?: string
-  /** Umsatzsteuersatz in % (nur Artikel der Zentrale) */
+  /** Umsatzsteuersatz in % (nur Artikel des Headquarters) */
   vatRate?: number
-  /** im Katalog bestellbar (nur Artikel der Zentrale) */
+  /** im Katalog bestellbar (nur Artikel des Headquarters) */
   available?: boolean
   /** Platz für ein echtes Produktfoto (URL oder Data-URL); ohne Bild wird die Illustration gezeigt */
   imageUrl?: string

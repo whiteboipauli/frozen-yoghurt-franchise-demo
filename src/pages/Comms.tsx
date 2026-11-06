@@ -157,7 +157,7 @@ export function CampaignsPage({ hq, storeId }: { hq?: boolean; storeId?: string 
               <div className="field"><label>Betroffene Artikel</label>
                 <div className="chips">{arts.map((a) => <button key={a.id} className="chip sm" aria-pressed={f.articleIds.includes(a.id)} onClick={() => setF({ ...f, articleIds: f.articleIds.includes(a.id) ? f.articleIds.filter((x) => x !== a.id) : [...f.articleIds, a.id] })}>{a.name}</button>)}</div></div>
               <div className="field"><label>Text für Social Media</label><textarea className="input" rows={2} value={f.social} onChange={(e) => setF({ ...f, social: e.target.value })} /></div>
-              <div className="row"><Btn onClick={() => setF(null)}>Abbrechen</Btn><Btn kind="cta" disabled={!f.title.trim() || !f.articleIds.length || f.to < f.from} onClick={() => { actions.saveCampaign({ ...f, social: f.social.trim() || `${f.title} – jetzt bei der Zentrale!` }); setF(null); toast('Aktion gespeichert') }}>Speichern</Btn></div>
+              <div className="row"><Btn onClick={() => setF(null)}>Abbrechen</Btn><Btn kind="cta" disabled={!f.title.trim() || !f.articleIds.length || f.to < f.from} onClick={() => { actions.saveCampaign({ ...f, social: f.social.trim() || `${f.title} – jetzt beim Headquarter!` }); setF(null); toast('Aktion gespeichert') }}>Speichern</Btn></div>
             </div>
           </Card>
         )}

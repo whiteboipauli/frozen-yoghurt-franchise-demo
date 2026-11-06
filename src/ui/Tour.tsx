@@ -113,7 +113,7 @@ const HQ_STEPS: Step[] = [
   { route: '/zentrale/laeden', role: HQ, targets: () => [q('stores')], title: 'Läden', text: () => 'Alle Läden mit Umsatz, Status und offenen Problemen. Ein Klick öffnet die Kontrollansicht.' },
   { route: `/zentrale/laeden/${DEMO_STORE_2}/meldungen`, role: HQ, targets: () => [q('ctl-tabs')], title: 'Kontrollansicht', text: () => 'Ein Laden mit Warenabgleich, Inventur, Bestellungen und Meldungen.' },
   { route: '/zentrale/warenabgleich', role: HQ, targets: () => [q('checks')], title: 'Warenabgleich', text: () => 'Passt die gezählte Ware zu Lieferung und Verkauf? Auffällige Läden stehen oben.' },
-  { route: '/zentrale/katalog', role: HQ, targets: () => [q('catalog')], title: 'Katalog', text: () => 'Hier pflegst du die Artikel, die die Läden bei der Zentrale bestellen.' },
+  { route: '/zentrale/katalog', role: HQ, targets: () => [q('catalog')], title: 'Katalog', text: () => 'Hier pflegst du die Artikel, die die Läden beim Headquarter bestellen.' },
 ]
 const stepsOf = (r: Role) => (r === 'hq' ? HQ_STEPS : STORE_STEPS)
 
@@ -198,11 +198,12 @@ export function Tour() {
       }
       setRect((o) => (o && r && Math.abs(o.left - r.left) < 1 && Math.abs(o.top - r.top) < 1 && Math.abs(o.right - r.right) < 1 && Math.abs(o.bottom - r.bottom) < 1 ? o : r))
       // Sprechblase platzieren
+      const TOP = 92 // unter der oberen Leiste
       const bw = 420, bh = bubble.current?.offsetHeight ?? 280, m = 28
-      let p = { left: (vw - bw) / 2, top: Math.max(24, (vh - bh) / 2) }
+      let p = { left: (vw - bw) / 2, top: Math.max(TOP, (vh - bh) / 2) }
       if (r) {
         const x0 = r.left - 10, x1 = r.right + 10, y0 = r.top - 10, y1 = r.bottom + 10
-        const clampT = (t: number) => Math.min(Math.max(16, t), vh - bh - 16)
+        const clampT = (t: number) => Math.min(Math.max(TOP, t), vh - bh - 16)
         const clampL = (l: number) => Math.min(Math.max(16, l), vw - bw - 16)
         if (y1 + m + bh <= vh - 12) p = { left: clampL(x0), top: y1 + m }
         else if (x1 + m + bw <= vw - 12) p = { left: x1 + m, top: clampT(y0) }

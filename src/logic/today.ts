@@ -9,6 +9,7 @@ import { dayStaffing, gapCount, staffDay } from './staffing'
 import { hash01 } from '../data/seedHr'
 import { gapText } from './hr'
 import { storeTips, type Tip } from './tips'
+import { wxKind, type WxDay } from './weather'
 import { orderList } from './orderlist'
 
 /** Verkäufe des Tages: Becher, Umsatz und Größen nach Stückzahl (Bestseller zuerst) */
@@ -96,11 +97,11 @@ export function todayState(db: Db, storeId: string, today = todayISO()): TodaySt
 
   // 3) Lieferung bestätigen bzw. Topping-Lieferung abhaken
   const unconfirmed = db.deliveries.filter((d) => d.storeId === storeId && d.bookedBy === 'zentrale' && !d.confirmed && d.date <= today)
-  const toppingDue = db.orders.filter((o) => o.storeId === storeId && o.supplier !== 'Zentrale' && o.status === 'bestellt' && o.expectedOn <= today)
+  const toppingDue = db.orders.filter((o) => o.storeId === storeId && o.supplier !== 'Headquarter' && o.status === 'bestellt' && o.expectedOn <= today)
   if (unconfirmed.length || toppingDue.length) {
     tasks.push({
       key: 'delivery', tone: 'yellow', icon: 'truck', title: 'Lieferung bestätigen',
-      text: unconfirmed.length ? `${plural(unconfirmed.length, 'Position', 'Positionen')} von der Zentrale warten auf deine Bestätigung.` : `${toppingDue[0].supplier}: Die Ware sollte da sein.`, btn: 'Bestätigen', to: 'ware/bestellungen',
+      text: unconfirmed.length ? `${plural(unconfirmed.length, 'Position', 'Positionen')} vom Headquarter warten auf deine Bestätigung.` : `${toppingDue[0].supplier}: Die Ware sollte da sein.`, btn: 'Bestätigen', to: 'ware/bestellungen',
     })
   }
 
@@ -111,7 +112,7 @@ export function todayState(db: Db, storeId: string, today = todayISO()): TodaySt
     tasks.push({
       key: 'inventory', tone: red ? 'red' : 'yellow', icon: 'inventory',
       title: inv.special ? 'Sonder-Inventur vom HQ' : inv.status === 'überfällig' ? `Monatsinventur ${monthLabel(inv.period)} überfällig` : `Monatsinventur ${monthLabel(inv.period)}: jetzt zählen`,
-      text: inv.special ? 'Das HQ bittet um eine zusätzliche Zählung.' : inv.status === 'überfällig' ? `Die Monatsinventur vom ${fmtDayMonth(inv.due)} fehlt. Bitte jetzt zählen.` : `Stichtag ist der ${fmtDayMonth(inv.due)}. Bitte die Artikel der Zentrale zählen.`, btn: 'Jetzt zählen', to: 'inventur',
+      text: inv.special ? 'Das HQ bittet um eine zusätzliche Zählung.' : inv.status === 'überfällig' ? `Die Monatsinventur vom ${fmtDayMonth(inv.due)} fehlt. Bitte jetzt zählen.` : `Stichtag ist der ${fmtDayMonth(inv.due)}. Bitte die Artikel des Headquarters zählen.`, btn: 'Jetzt zählen', to: 'inventur',
     })
   }
 
@@ -147,4 +148,12 @@ export function weekOverview(db: Db, storeId: string, today = todayISO()): WeekD
     const d = dayStaffing(db, storeId, date, today)
     return { date, cups: Math.round(expectedCups(db, storeId, date, today) / 10) * 10, missing: d.gaps.reduce((m, g) => Math.max(m, g.missing), 0) }
   })
+}
+
+/** Wettersymbol zur erwarteten Becherzahl: viele Becher = Sonne, wenige = Wolke oder Regen, sonst das echte Wetter */
+export function dayWxIcon(w: WxDay | null, cups: number, mean: number): IconName {
+  if (mean > 0 && cups >= mean * 1.06) return 'wx-sun'
+  const real: IconName = w ? wxKind(w).icon : 'wx-part'
+  if (mean > 0 && cups <= mean * 0.94) return real === 'wx-sun' || real === 'wx-part' ? 'wx-cloud' : real
+  return real === 'wx-sun' ? 'wx-part' : real
 }

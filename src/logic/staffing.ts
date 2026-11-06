@@ -1,4 +1,5 @@
 import type { Db, Shift } from '../data/types'
+import { TOUR_STORE } from '../data/stores'
 import { addDays, todayISO, weekdayIdx, WEEKDAYS } from '../lib/date'
 import { coverage, gapsOf, gapText, type Gap, type Need } from './hr'
 import { dayType, DAYTYPE_LABEL, holidayOn, hourlyOf, openHours, saleDayOf, schoolHolidayOn, similarDays, storeOf, trendFactor, wxOn, dayCups, dayRevenue, type DayType } from './history'
@@ -66,7 +67,10 @@ export function staffDay(db: Db, storeId: string, date: string, today = todayISO
     n++
   }
   if (n > 0) for (let i = 0; i < nH; i++) { cups[i] /= n; rev[i] /= n }
-  const hours: HourForecast[] = cups.map((c, i) => ({ hour: open + i, cups: c, revenue: rev[i], staff: Math.max(st.minStaff, Math.ceil(c / Math.max(1, st.cupsPerStaffHour) - 1e-9)) }))
+  // Demo-Bedarf für den Flagship-Laden: 2 vormittags, 3 zur Mittagsspitze und am späten Nachmittag, sonst 2; an sonnigen Tagen in den Spitzen eine Person mehr
+  const sunny = !!wx && rainClass(wx.rain) === 'trocken' && wx.sun >= 6
+  const demoNeed = (h: number) => (h >= 12 && h < 14) || (h >= 16 && h < 18) ? 3 + (sunny ? 1 : 0) : 2
+  const hours: HourForecast[] = cups.map((c, i) => ({ hour: open + i, cups: c, revenue: rev[i], staff: storeId === TOUR_STORE ? Math.max(st.minStaff, demoNeed(open + i)) : Math.max(st.minStaff, Math.ceil(c / Math.max(1, st.cupsPerStaffHour) - 1e-9)) }))
   const need: Need = Object.fromEntries(hours.map((h) => [h.hour, h.staff]))
   const total = cups.reduce((a, b) => a + b, 0)
   // Vergleichswert: üblicher Tag gleichen Typs in der Jahreszeit (ohne Wetter)

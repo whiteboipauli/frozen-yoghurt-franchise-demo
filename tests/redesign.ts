@@ -54,7 +54,7 @@ const rank = rows.map((f) => ({ red: 0, yellow: 1, green: 2 })[reachTone(f)])
 ok(rank.every((r, i) => i === 0 || rank[i - 1] <= r) && rows.length === db.articles.length, 'Artikel-Liste: rot → gelb → grün, alle Artikel')
 ok(articleRows(db, TOUR_STORE, 'toppings').every((f) => f.article.source === 'extern'), 'Filter Toppings')
 const all = orderAllPlan(db, TOUR_STORE)
-ok(all.zentrale.every((l) => db.articles.find((a) => a.id === l.articleId)?.source === 'zentrale') && all.suppliers.every((s) => s.supplier !== 'Zentrale' && s.lines.length > 0), `Alle Vorschläge: ${all.zentrale.length} Artikel für den Warenkorb, ${all.suppliers.length} Lieferanten`)
+ok(all.zentrale.every((l) => db.articles.find((a) => a.id === l.articleId)?.source === 'zentrale') && all.suppliers.every((s) => s.supplier !== 'Headquarter' && s.lines.length > 0), `Alle Vorschläge: ${all.zentrale.length} Artikel für den Warenkorb, ${all.suppliers.length} Lieferanten`)
 const before = getDb().orders.length
 for (const s of all.suppliers) actions.placeOrder(TOUR_STORE, s.supplier, s.lines.map((l) => ({ articleId: l.articleId, packs: l.packs })))
 ok(getDb().orders.length === before + all.suppliers.length, 'Alle Vorschläge: Toppings je Lieferant als bestellt markiert')

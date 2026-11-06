@@ -80,7 +80,7 @@ export function StockPage({ storeId }: { storeId: string }) {
         <Card>
           <div className="table-wrap">
             <table className="tbl">
-              <thead><tr><th>Artikel</th><th>Ampel</th><th>Reicht noch<Info text="Reichweite: so viele Tage reicht der Bestand, wenn alles wie prognostiziert verkauft wird. Bei Waren von der Zentrale ist sie grob – genau gezählt wird bei der Inventur." /></th><th className="r">Bestand / zuletzt gezählt</th><th className="r">Spätestens bestellen</th><th className="r">Lieferzeit</th><th /></tr></thead>
+              <thead><tr><th>Artikel</th><th>Ampel</th><th>Reicht noch<Info text="Reichweite: so viele Tage reicht der Bestand, wenn alles wie prognostiziert verkauft wird. Bei Waren vom Headquarter ist sie grob – genau gezählt wird bei der Inventur." /></th><th className="r">Bestand / zuletzt gezählt</th><th className="r">Spätestens bestellen</th><th className="r">Lieferzeit</th><th /></tr></thead>
               <tbody>
                 {fc.map((f) => {
                   const yo = f.article.source === 'zentrale'

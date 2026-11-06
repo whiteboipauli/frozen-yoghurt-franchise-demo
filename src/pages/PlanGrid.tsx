@@ -9,6 +9,7 @@ import { holidayOn, schoolHolidayOn } from '../logic/history'
 import { dayStaffing, gapCount, staffDay } from '../logic/staffing'
 import { wxKind } from '../logic/weather'
 import { weekStart } from '../logic/weekly'
+import { dayWxIcon } from '../logic/today'
 import { range } from '../logic/callouts'
 import { Icon } from '../icons'
 import { Avatar, Btn, Modal, Segmented, useToast } from '../ui/kit'
@@ -18,6 +19,7 @@ import { GapDialog } from './GapDialog'
 import { ReplaceDialog, SickDialog } from './Absence'
 
 type View = 'woche' | 'monat' | 'tag'
+const short = (name: string) => { const p = name.split(' '); return p.length > 1 ? `${p[0]} ${p[p.length - 1][0]}.` : name }
 const KIND_LABEL: Record<string, string> = { minijob: 'Minijob', werkstudent: 'Werkstudent', teilzeit: 'Teilzeit', vollzeit: 'Vollzeit' }
 
 /** Dienstplan: Raster Personen × Tage, mit Besetzungszeile, Monats- und Tagesansicht */
@@ -43,6 +45,9 @@ export function PlanPage({ storeId }: { storeId: string }) {
   const gapsA = gapCount(db, storeId, Array.from({ length: 7 }, (_, i) => addDays(wk0, i)), today)
   const gapsB = gapCount(db, storeId, Array.from({ length: 7 }, (_, i) => addDays(wk0, 7 + i)), today)
   const hr = db.settings.hr
+  const hoursList = Array.from({ length: Math.max(1, info[0].sd.close - info[0].sd.open) }, (_, i) => info[0].sd.open + i)
+  const meanCups = info.reduce((n, x) => n + x.sd.cups, 0) / 7
+  let gapMarked = false
 
   const autoFill = useAutoFill(storeId, days)
   const wk = (d: string) => `${WEEKDAYS_SHORT[weekdayIdx(d)]} ${fmtDayMonth(d)}`
@@ -67,56 +72,50 @@ export function PlanPage({ storeId }: { storeId: string }) {
       ))}
 
       {view === 'woche' && (
-        <div className="glass card pgrid dense">
-          <div className="pg">
+        <div className="glass card pgrid dense" data-tour="week-grid">
+          <div className="tg">
             <span />
             {info.map(({ d, sd, ds }) => {
               const hol = holidayOn(db, storeId, d), fer = schoolHolidayOn(db, storeId, d)
               return (
-                <button key={d} className={`pg-h ${d === today ? 'today' : ''} ${focus === d ? 'today' : ''} ${d >= today && ds.gaps.length ? 'gap' : ''}`} onClick={() => setDayDlg(d)} title={hol?.name ?? (fer ? 'Schulferien' : '')}>
+                <button key={d} className={`pg-h ${d === today ? 'today' : ''} ${focus === d ? 'today' : ''} ${d >= today && ds.gaps.length ? 'gap' : ''} ${d < today ? 'past' : ''}`} onClick={() => setDayDlg(d)} title={hol?.name ?? (fer ? 'Schulferien' : '')}>
                   <span>{WEEKDAYS_SHORT[weekdayIdx(d)]} {fmtDayMonth(d)}</span>
-                  <small><Icon name={sd.wx ? wxKind(sd.wx).icon : 'wx-none'} size={16} />{sd.wx ? `${Math.round(sd.wx.tmax)}°` : '–'}{(hol || fer) && <Icon name="kalender-warnung" size={15} />}</small>
+                  <small><Icon name={dayWxIcon(sd.wx, sd.cups, meanCups)} size={16} />{Math.round(sd.cups / 10) * 10} Becher{(hol || fer) && <Icon name="kalender-warnung" size={14} />}</small>
                 </button>
               )
             })}
-            {emps.map((e) => {
-              const acc = hourAccount(db, e, today)
-              void acc
-              return [
-                <div key={e.id} className="pg-name"><Avatar name={e.name} photoUrl={e.photoUrl} size={32} /><div><b title={e.name}>{e.name}</b><span>{KIND_LABEL[e.contractId] ?? e.contractId}</span></div></div>,
-                ...info.map(({ d, sd }) => {
-                  const shifts = db.shifts.filter((s) => s.empId === e.id && s.date === d)
-                  const abs = isAbsent(db.absences, e.id, d)
-                  const bad = viol.some((v) => v.empId === e.id && v.date === d)
-                  return (
-                    <div key={`${e.id}${d}`} className={`pg-cell ${abs && !shifts.length ? 'na' : ''}`} role="button" tabIndex={0}
-                      onClick={() => { if (d < today) return; if (!shifts.length && !abs) setDlg({ date: d, empId: e.id, start: sd.open + 2, end: Math.min(sd.close, sd.open + 8) }) }}>
-                      {shifts.map((s) => (
-                        <button key={s.id} className={`pg-chip ${s.status === 'ausfall' ? 'ausfall' : bad ? 'warn' : ''}`}
-                          title={s.status === 'ausfall' ? 'Ausfall – krank gemeldet' : `${e.name}: ${range(s.start, s.end)}`}
-                          onClick={(ev) => { ev.stopPropagation(); if (s.status === 'ausfall' && s.calloutId && (db.callouts ?? []).some((c) => c.id === s.calloutId && !c.covered[s.id])) setCallout(s.calloutId); else setDlg({ shiftId: s.id, date: d, start: s.start, end: s.end }) }}>
-                          {s.status === 'ausfall' ? <><Icon name="person-ausfall" size={15} /><span>krank</span></> : <span>{range(s.start, s.end).replace(' Uhr', '')}</span>}
+            {hoursList.map((h) => [
+              <div key={`h${h}`} className="tg-hour">{h}–{h + 1}</div>,
+              ...info.map(({ d, sd, ds }) => {
+                const need = sd.need[h] ?? 0
+                const cov = ds.cov[h - sd.open] ?? 0
+                const miss = need - cov
+                const state = miss > 0 ? 'gap' : miss < 0 ? 'over' : 'ok'
+                const here = db.shifts.filter((s) => s.storeId === storeId && s.date === d && s.start <= h && s.end > h)
+                const win = miss > 0 && d >= today ? ds.gaps.find((g) => g.from <= h && h < g.to) : undefined
+                const firstGap = win && !gapMarked && ((gapMarked = true))
+                return (
+                  <div key={`${d}${h}`} className={`tg-cell ${state} ${d < today ? 'past' : ''} ${win ? 'click' : ''}`} data-tour={firstGap ? 'gap-block' : undefined}
+                    role={win ? 'button' : undefined} tabIndex={win ? 0 : undefined} onClick={() => win && setGapDlg({ date: d, gap: win })} onKeyDown={(e) => win && e.key === 'Enter' && setGapDlg({ date: d, gap: win })}
+                    title={`${WEEKDAYS_SHORT[weekdayIdx(d)]} ${h}–${h + 1} Uhr: Bedarf ${need}`}>
+                    {here.map((s) => {
+                      const e = db.employees.find((x) => x.id === s.empId)
+                      const sick = s.status === 'ausfall'
+                      return (
+                        <button key={s.id} className={`tg-chip ${sick ? 'krank' : ''}`} title={`${e?.name ?? ''}: ${range(s.start, s.end)}${sick ? ' – krank' : ''}`}
+                          onClick={(ev) => { ev.stopPropagation(); if (sick && s.calloutId && (db.callouts ?? []).some((c) => c.id === s.calloutId && !c.covered[s.id])) setCallout(s.calloutId); else if (d >= today) setDlg({ shiftId: s.id, date: d, start: s.start, end: s.end, empId: s.empId }) }}>
+                          {short(e?.name ?? '?')}{sick && ' · krank'}
                         </button>
-                      ))}
-                      {!shifts.length && (abs ? <span className="small">{abs.type === 'Krank' ? 'krank' : 'frei'}</span> : d >= today ? <span className="pg-plus"><Icon name="plus" size={16} /></span> : null)}
-                    </div>
-                  )
-                }),
-              ]
-            })}
-            <div className="pg-name"><IconTile icon="personen" tile={34} size={18} /><div><b>Besetzung</b><span>pro Tag</span></div></div>
-            {info.map(({ d, sd, ds }) => {
-              void sd
-              const gap = d >= today ? ds.gaps[0] : undefined
-              const lvl: Level = gap ? 'rot' : 'gruen'
-              return (
-                <div key={d} data-tour={gap ? 'gap-block' : undefined} className={`pg-need tint-${lvl}`} role="button" tabIndex={0} onClick={() => (gap && d >= today ? setGapDlg({ date: d, gap }) : setDayDlg(d))}>
-                  {gap ? <span className="pg-gap"><Signal level="rot" size={18} />Lücke {range(gap.from, gap.to).replace(' Uhr', '')} · fehlt {gap.missing}</span> : d < today ? <span className="faint small">vorbei</span> : <SignalChip level="gruen">besetzt</SignalChip>}
-                </div>
-              )
-            })}
+                      )
+                    })}
+                    {state === 'gap' && d >= today && <span className="tg-flag gap"><Signal level="rot" size={13} />fehlt {miss}</span>}
+                    {state === 'over' && d >= today && <span className="tg-flag over"><Signal level="bernstein" size={13} />+{-miss}</span>}
+                  </div>
+                )
+              }),
+            ])}
           </div>
-          <p className="faint small" style={{ marginTop: 10 }}>Auf eine Schicht klicken zum Ändern, auf eine rote Lücke zum Schließen.</p>
+          <p className="faint small" style={{ marginTop: 10 }}>Grün: Bedarf erfüllt · rot: Lücke (Klick schließt sie) · gelb: überbesetzt. Auf einen Namen klicken zum Ändern der Schicht.</p>
         </div>
       )}
 

@@ -639,3 +639,23 @@ button.big-count { padding: 0; display: flex; align-items: center; gap: 14px; bo
 .ob-never { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--ink-2); cursor: pointer; }
 .ob-never input { width: 16px; height: 16px; accent-color: var(--wine); }
 .tour-block { position: fixed; inset: 0; z-index: 499; background: transparent; }
+
+/* Dienstplan: Zeitraster (Tage × Stunden) */
+.tg { display: grid; grid-template-columns: 52px repeat(7, minmax(0, 1fr)); gap: 4px; }
+.tg .pg-h small { display: flex; align-items: center; justify-content: center; gap: 3px; font-size: 11px; flex-wrap: wrap; }
+.pg-h.past { opacity: .55; }
+.tg-hour { font-size: 11.5px; font-weight: 700; color: var(--ink-3); display: flex; align-items: center; justify-content: flex-end; padding-right: 4px; font-variant-numeric: tabular-nums; }
+.tg-cell { min-height: 40px; border-radius: 10px; padding: 3px; display: flex; flex-wrap: wrap; gap: 3px; align-content: flex-start; min-width: 0; border: 1px solid transparent; }
+.tg-cell.ok { background: rgba(46, 125, 91, .11); }
+.tg-cell.gap { background: rgba(194, 65, 58, .13); border-color: rgba(194, 65, 58, .35); }
+.tg-cell.over { background: rgba(240, 176, 58, .2); }
+.tg-cell.past { opacity: .45; }
+.tg-cell.click { cursor: pointer; } .tg-cell.click:hover { background: rgba(194, 65, 58, .22); }
+.tg-chip { padding: 1px 6px; border-radius: 8px; background: #fff; border: 1px solid rgba(46, 125, 91, .3); font: inherit; font-weight: 700; font-size: 11px; color: #1f6a4a; cursor: pointer; white-space: nowrap; }
+.tg-chip.krank { background: repeating-linear-gradient(135deg, rgba(110, 100, 94, .18) 0 5px, rgba(110, 100, 94, .06) 5px 10px); color: #5f5751; border-color: rgba(110, 100, 94, .35); }
+.tg-flag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 800; padding: 1px 5px; border-radius: 8px; }
+.tg-flag.gap { color: var(--bad-text); } .tg-flag.over { color: var(--warn-text); }
+
+.art-inv { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; margin-top: 8px; border-radius: var(--r-md); background: var(--tile-bg); border: 1px solid var(--tile-edge); }
+.art-inv .grow { display: flex; flex-direction: column; min-width: 240px; }
+.art-quote { padding: 12px 14px; border-radius: var(--r-md); background: var(--tile-bg); border: 1px solid var(--tile-edge); margin: 8px 0 12px; }

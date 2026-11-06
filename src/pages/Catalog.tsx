@@ -8,7 +8,7 @@ import { readImage } from '../lib/image'
 import { Icon } from '../icons'
 import { Btn, Card, Info, Modal, NumInput, PageHead, Pill, Switch, useToast } from '../ui/kit'
 
-/** Katalog des HQ: Artikel, die Franchisenehmer bei der Zentrale beziehen */
+/** Katalog des HQ: Artikel, die Franchisenehmer beim Headquarter beziehen */
 export function CatalogTable() {
   const db = useDb()
   const toast = useToast()
@@ -49,7 +49,7 @@ export function CatalogTable() {
             <p className="small muted">Neue Artikel erscheinen auch im Bestand der Filialen (zunächst ohne Verbrauch).</p>
           </div>
           <div className="actions"><Btn onClick={() => setAdding(false)}>Abbrechen</Btn><Btn kind="primary" disabled={!d.name.trim() || !d.sku.trim()} onClick={() => {
-            actions.addArticle({ id: 'x-' + Date.now().toString(36), sku: d.sku.trim(), name: d.name.trim(), category: 'Zubehör', source: 'zentrale', supplier: 'Zentrale', unit: d.unit, packSize: d.packSize, packPrice: d.price, vatRate: d.vat, available: true, leadTimeDays: d.lead })
+            actions.addArticle({ id: 'x-' + Date.now().toString(36), sku: d.sku.trim(), name: d.name.trim(), category: 'Zubehör', source: 'zentrale', supplier: 'Headquarter', unit: d.unit, packSize: d.packSize, packPrice: d.price, vatRate: d.vat, available: true, leadTimeDays: d.lead })
             setAdding(false); toast(`${d.name} angelegt – ${fmtEUR(d.price)} netto`)
           }}>Anlegen</Btn></div>
         </Modal>
@@ -65,7 +65,7 @@ export function CatalogPage() {
   const cur = items.find((a) => a.id === edit)
   return (
     <>
-      <PageHead title="Katalog" hint={<>Was die Läden bei der Zentrale bestellen können – mit Bild, Preis, Steuersatz und Lieferzeit.<Info text="Preise sind Nettopreise je Verpackungseinheit. Änderungen gelten für neue Bestellungen; erstellte Rechnungen bleiben unverändert. Jeder Artikel hat einen Bild-Platz: Ein echtes Produktfoto ersetzt die Illustration." /></>} right={<Pill>Alle Werte Demo</Pill>} />
+      <PageHead title="Katalog" hint={<>Was die Läden beim Headquarter bestellen können – mit Bild, Preis, Steuersatz und Lieferzeit.<Info text="Preise sind Nettopreise je Verpackungseinheit. Änderungen gelten für neue Bestellungen; erstellte Rechnungen bleiben unverändert. Jeder Artikel hat einen Bild-Platz: Ein echtes Produktfoto ersetzt die Illustration." /></>} right={<Pill>Alle Werte Demo</Pill>} />
       <div className="cat-grid cat-hq" data-tour="catalog-hq">
         {items.map((a, i) => (
           <button key={a.id} className={`glass cat-tile card in clicky ${a.available === false ? 'off' : ''}`} style={{ ['--i' as string]: Math.min(i, 10) * 0.4 }} onClick={() => setEdit(a.id)} aria-label={`${a.name} bearbeiten`}>
@@ -127,7 +127,7 @@ function NewItem({ onClose }: { onClose: () => void }) {
         <p className="small muted">Neue Artikel erscheinen auch im Bestand der Läden (zunächst ohne Verbrauch). Das Produktfoto kannst du danach hochladen.</p>
       </div>
       <div className="actions"><Btn onClick={onClose}>Abbrechen</Btn><Btn kind="primary" disabled={!d.name.trim() || !d.sku.trim()} onClick={() => {
-        actions.addArticle({ id: 'x-' + Date.now().toString(36), sku: d.sku.trim(), name: d.name.trim(), category: 'Zubehör', source: 'zentrale', supplier: 'Zentrale', unit: d.unit, packSize: d.packSize, packPrice: d.price, vatRate: d.vat, available: true, leadTimeDays: d.lead })
+        actions.addArticle({ id: 'x-' + Date.now().toString(36), sku: d.sku.trim(), name: d.name.trim(), category: 'Zubehör', source: 'zentrale', supplier: 'Headquarter', unit: d.unit, packSize: d.packSize, packPrice: d.price, vatRate: d.vat, available: true, leadTimeDays: d.lead })
         onClose(); toast(`${d.name} angelegt – ${fmtEUR(d.price)} netto`)
       }}>Anlegen</Btn></div>
     </Modal>

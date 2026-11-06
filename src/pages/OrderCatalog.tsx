@@ -9,7 +9,7 @@ import { ProductArt } from '../icons'
 import { Icon } from '../ui/icons'
 import { Btn, Card, PageHead, useToast, NumInput } from '../ui/kit'
 
-/** „Bei der Zentrale bestellen“: Katalog als Kacheln, Warenkorb mit Netto/USt/Brutto, Bestellhistorie */
+/** „Beim Headquarter bestellen“: Katalog als Kacheln, Warenkorb mit Netto/USt/Brutto, Bestellhistorie */
 export function OrderCatalogPage({ storeId }: { storeId: string }) {
   const db = useDb()
   const c = useCart()
@@ -30,7 +30,7 @@ export function OrderCatalogPage({ storeId }: { storeId: string }) {
   }
   return (
     <>
-      <PageHead title="Bei der Zentrale bestellen" hint="Becher, Pulver, Löffel und mehr direkt beim HQ bestellen – ohne E-Mail und Excel. Die Mengen sind Verpackungseinheiten (Kartons). Mit dem Absenden bekommst du sofort eine Auftragsbestätigung; die Rechnung folgt mit dem Versand." />
+      <PageHead title="Beim Headquarter bestellen" hint="Becher, Pulver, Löffel und mehr direkt beim HQ bestellen – ohne E-Mail und Excel. Die Mengen sind Verpackungseinheiten (Kartons). Mit dem Absenden bekommst du sofort eine Auftragsbestätigung; die Rechnung folgt mit dem Versand." />
       <div className="oc">
         <div className="stack">
           <div className="store-grid" data-tour="catalog">

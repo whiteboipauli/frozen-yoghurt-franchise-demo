@@ -107,7 +107,7 @@ function ArticlesTab() {
         <Modal onClose={() => setAdding(false)}>
           <h2>Neuer Artikel</h2>
           <div className="stack" style={{ marginTop: 16, gap: 16 }}>
-            <div className="field"><label>Bezug</label><Segmented<Source> value={draft.source} onChange={(v) => setDraft(blank(v))} options={[{ value: 'zentrale', label: 'Von der Zentrale bezogen' }, { value: 'extern', label: 'Topping (extern)' }]} /></div>
+            <div className="field"><label>Bezug</label><Segmented<Source> value={draft.source} onChange={(v) => setDraft(blank(v))} options={[{ value: 'zentrale', label: 'Vom Headquarter bezogen' }, { value: 'extern', label: 'Topping (extern)' }]} /></div>
             <div className="field"><label>Name</label><input className="input wide" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} autoFocus /></div>
             {draft.source === 'extern' && <div className="field"><label>Lieferant</label><input className="input wide" value={draft.supplier} list="suppliers" onChange={(e) => setDraft({ ...draft, supplier: e.target.value })} /></div>}
             <div className="row wrap">
@@ -130,7 +130,7 @@ function ArticlesTab() {
   )
 }
 function blank(source: Source): Article {
-  return { id: '', name: '', category: source === 'extern' ? 'Topping' : 'Zubehör', source, supplier: source === 'zentrale' ? 'Zentrale' : '', unit: source === 'extern' ? 'kg' : 'Stück', packSize: source === 'extern' ? 1 : 100, portionGrams: source === 'extern' ? 20 : undefined, leadTimeDays: source === 'extern' ? 2 : 3, packPrice: 20 }
+  return { id: '', name: '', category: source === 'extern' ? 'Topping' : 'Zubehör', source, supplier: source === 'zentrale' ? 'Headquarter' : '', unit: source === 'extern' ? 'kg' : 'Stück', packSize: source === 'extern' ? 1 : 100, portionGrams: source === 'extern' ? 20 : undefined, leadTimeDays: source === 'extern' ? 2 : 3, packPrice: 20 }
 }
 
 function RecipesTab() {

@@ -8,8 +8,8 @@ export const brand = {
   rechnungsAbsender: 'Frozen Yoghurt Franchise GmbH (Demo)',
   rechnungsPrefix: 'FY',
   artikelPrefix: 'FY',
-  /** Lieferant der Artikel, die bei der Zentrale bestellt werden */
-  lieferant: 'Zentrale',
+  /** Lieferant der Artikel, die beim Headquarter bestellt werden */
+  lieferant: 'Headquarter',
   /** Namen der Speicherschlüssel im Browser */
   speicherPrefix: 'fj-ww',
 } as const

@@ -17,7 +17,7 @@ export function ReceivingPage({ storeId }: { storeId: string }) {
 
   const yoDeliveries = db.deliveries.filter((d) => d.storeId === storeId && d.bookedBy === 'zentrale' && d.date <= today && d.date >= addDays(today, -21)).sort((a, b) => b.date.localeCompare(a.date))
   const yoOpen = db.centralOrders.filter((o) => o.storeId === storeId && (o.status === 'eingegangen' || o.status === 'bestätigt'))
-  const topOpen = db.orders.filter((o) => o.storeId === storeId && o.supplier !== 'Zentrale' && o.status === 'bestellt').sort((a, b) => a.expectedOn.localeCompare(b.expectedOn))
+  const topOpen = db.orders.filter((o) => o.storeId === storeId && o.supplier !== 'Headquarter' && o.status === 'bestellt').sort((a, b) => a.expectedOn.localeCompare(b.expectedOn))
 
   const arriving = db.centralOrders.filter((o) => o.storeId === storeId && o.status === 'versendet').sort((a, b) => (a.etaDate ?? '').localeCompare(b.etaDate ?? ''))
   const copy = (t: string) => { void navigator.clipboard?.writeText(t); toast('Sendungsnummer kopiert') }
@@ -25,11 +25,11 @@ export function ReceivingPage({ storeId }: { storeId: string }) {
 
   return (
     <>
-      <PageHead title="Wareneingang" hint="Ist die Lieferung angekommen? Lieferungen der Zentrale bucht das HQ – du bestätigst nur. Topping-Lieferungen buchst du selbst." />
+      <PageHead title="Wareneingang" hint="Ist die Lieferung angekommen? Lieferungen des Headquarters bucht das HQ – du bestätigst nur. Topping-Lieferungen buchst du selbst." />
       <div className="stack">
         <div className="arr-list" data-tour="arriving">
           <h2 className="sec-title" style={{ margin: '0 4px' }}>Wird gerade angeliefert</h2>
-          {arriving.length === 0 ? <div className="glass arr-card"><span className="muted">Gerade ist keine Lieferung von der Zentrale unterwegs.</span></div> : arriving.map((o) => (
+          {arriving.length === 0 ? <div className="glass arr-card"><span className="muted">Gerade ist keine Lieferung vom Headquarter unterwegs.</span></div> : arriving.map((o) => (
             <div className="glass arr-card" key={o.id}>
               <span className="arr-ico"><Icon name="truck" size={22} stroke={1.7} /></span>
               <div className="arr-cell"><span className="cap">Lieferant</span><b>FY</b></div>
@@ -42,7 +42,7 @@ export function ReceivingPage({ storeId }: { storeId: string }) {
           ))}
         </div>
         <h2 className="sec-title">Verlauf</h2>
-        <Card title="Lieferungen von der Zentrale" i={1}>
+        <Card title="Lieferungen vom Headquarter" i={1}>
           {yoOpen.length > 0 && (
             <div className="note" style={{ marginBottom: 14 }}>
               <Icon name="truck" />

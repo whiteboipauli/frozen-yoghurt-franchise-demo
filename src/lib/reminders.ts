@@ -8,7 +8,7 @@ export interface ReminderCfg { on: boolean; channel: Channel }
 export const REMINDERS: { key: ReminderKey; label: string; preview: string }[] = [
   { key: 'inventory', label: 'Monatsinventur fällig', preview: 'Die Monatsinventur ist offen – bitte zum Monatsende zählen.' },
   { key: 'order', label: 'Bis morgen bestellen', preview: 'Becher L bitte bis morgen bestellen, sonst wird es knapp.' },
-  { key: 'delivery', label: 'Lieferung angekommen', preview: 'Eine Lieferung von der Zentrale ist da – bitte den Empfang bestätigen.' },
+  { key: 'delivery', label: 'Lieferung angekommen', preview: 'Eine Lieferung vom Headquarter ist da – bitte den Empfang bestätigen.' },
   { key: 'gap', label: 'Dienstplan-Lücke', preview: 'Am Samstag von 15 bis 19 Uhr fehlt eine Person im Dienstplan.' },
   { key: 'hq', label: 'Nachricht vom HQ', preview: 'Neue Nachricht vom HQ auf der Pinnwand – bitte mit „Gelesen“ bestätigen.' },
 ]

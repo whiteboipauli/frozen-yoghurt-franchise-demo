@@ -55,7 +55,7 @@ export function CupArt({ size = 'M', tops = [], height = 150 }: { size?: 'S' | '
   )
 }
 
-/** Symbol eines Artikels (Topping-Icon bzw. Artikel der Zentrale) */
+/** Symbol eines Artikels (Topping-Icon bzw. Artikel des Headquarters) */
 export const artIconName = (a: { id: string; category: string }): IconName =>
   TOPPING_META[a.id]?.icon ?? (a.id === 'pulver' ? 'powder' : a.id.startsWith('becher') ? 'cup' : a.id === 'loeffel' ? 'spoon' : a.id === 'deckel' ? 'lid' : a.id === 'servietten' ? 'napkin' : a.id === 'tragetasche' ? 'tote' : 'box')
 export function ArtIcon({ article, size = 22 }: { article: { id: string; category: string }; size?: number }) {
@@ -64,7 +64,7 @@ export function ArtIcon({ article, size = 22 }: { article: { id: string; categor
 /** Kompatibilität: liefert das Symbol als Element */
 export const artEmoji = (a: { id: string; category: string }) => <ArtIcon article={a} />
 
-/** Farben der von der Zentrale bezogenen Artikel (für den Glas-Kreis) */
+/** Farben der vom Headquarter bezogenen Artikel (für den Glas-Kreis) */
 const YO_COLOR: Record<string, string> = { 'becher-s': '#3f8cf0', 'becher-m': '#3f8cf0', 'becher-l': '#3f8cf0', loeffel: '#12a594', pulver: '#8a6ee0', deckel: '#5f7a9c', servietten: '#e0912c', tragetasche: '#4f6bd8' }
 
 /** EIN Bild-Stil für alle Artikel: Glas-Kreis, leicht in der Artikelfarbe eingefärbt – Topping-Symbol bzw. Illustration (oder Foto) darin */

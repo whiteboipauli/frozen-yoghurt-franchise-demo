@@ -63,7 +63,7 @@ export function PlanPage({ storeId }: { storeId: string }) {
               <div className="field"><label>Becher pro Mitarbeiter-Stunde</label><NumInput width={90} min={5} value={st.cupsPerStaffHour} onChange={(v) => actions.updateStore(storeId, { cupsPerStaffHour: Math.max(5, v) })} /></div>
               <div className="field"><label>Mindestbesetzung</label><NumInput width={90} min={1} value={st.minStaff} onChange={(v) => actions.updateStore(storeId, { minStaff: Math.max(1, Math.round(v)) })} /></div>
             </div>
-            <p className="faint small">Demo-Werte, jederzeit änderbar. Datengrundlage: Demo-Umsatzhistorie der letzten 13 Monate (später aus der Kasse helloTESS! über die Zentrale). Wetter: Open-Meteo.</p>
+            <p className="faint small">Demo-Werte, jederzeit änderbar. Datengrundlage: Demo-Umsatzhistorie der letzten 13 Monate (später aus der Kasse helloTESS! über das Headquarter). Wetter: Open-Meteo.</p>
           </div>
         </details>
       </div>

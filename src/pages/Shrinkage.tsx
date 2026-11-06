@@ -18,7 +18,7 @@ export function FlowChart({ f, light, fmt, pauschalePct, tour }: { f: Flow; ligh
   const D = f.delivered
   const w = (n: number) => `${Math.max(0, (n / D) * 100)}%`
   const rows: { lbl: string; sub?: string; start: number; len: number; color: string; val: string; hot?: boolean }[] = [
-    { lbl: 'Geliefert', sub: 'von der Zentrale an die Filiale', start: 0, len: D, color: 'linear-gradient(90deg,#c3cfdf,#8fa0b8)', val: fmt(D) },
+    { lbl: 'Geliefert', sub: 'vom Headquarter an die Filiale', start: 0, len: D, color: 'linear-gradient(90deg,#c3cfdf,#8fa0b8)', val: fmt(D) },
     { lbl: 'Verkauft laut Kasse', sub: 'aus allen Kassenbuchungen', start: 0, len: f.sold, color: 'linear-gradient(90deg,var(--accent-soft),var(--accent))', val: fmt(f.sold) },
     { lbl: `Schwund-Pauschale ${new Intl.NumberFormat('de-DE').format(pauschalePct)} %`, sub: 'üblicher Verlust, vom HQ festgelegt', start: f.sold, len: f.pauschale, color: 'linear-gradient(90deg,#ffd27a,#f5a30b)', val: fmt(f.pauschale) },
     { lbl: 'Sonstige Abgänge', sub: 'von der Filiale eingetragen', start: f.sold + f.pauschale, len: f.outflows, color: 'linear-gradient(90deg,#9fc4f5,#4a90e2)', val: fmt(f.outflows) },

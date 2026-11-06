@@ -40,7 +40,7 @@ export function InvoicesPage({ mode, storeId }: { mode: Mode; storeId?: string; 
     <>
       <PageHead
         title="Rechnungen"
-        hint={mode === 'zentrale' ? 'Alle Rechnungen an die Franchisenehmer. Erstellte Rechnungen sind unveränderlich – Korrekturen nur per Stornorechnung.' : 'Deine Rechnungen von der Zentrale mit Status. Ansehen, drucken oder als PDF speichern.'}
+        hint={mode === 'zentrale' ? 'Alle Rechnungen an die Franchisenehmer. Erstellte Rechnungen sind unveränderlich – Korrekturen nur per Stornorechnung.' : 'Deine Rechnungen vom Headquarter mit Status. Ansehen, drucken oder als PDF speichern.'}
         right={mode === 'zentrale' ? <Btn kind="primary" icon="plus" onClick={() => setNewInv(true)}>Neue Rechnung</Btn> : undefined}
       />
       {newInv && <NewInvoiceDialog onClose={() => setNewInv(false)} />}

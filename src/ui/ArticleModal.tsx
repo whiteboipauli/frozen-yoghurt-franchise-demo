@@ -95,7 +95,7 @@ export function ArticleModal({ storeId, articleId, onClose }: { storeId: string;
           <ArtBadge article={a} size={84} />
           <div style={{ flex: 1 }}>
             <h2>{a.name}</h2>
-            <p className="muted">{yo ? 'von der Zentrale bezogen' : `Topping · ${a.supplier}`} · {yo ? packLabel(a) : `Packung à ${a.packSize} kg`}</p>
+            <p className="muted">{yo ? 'vom Headquarter bezogen' : `Topping · ${a.supplier}`} · {yo ? packLabel(a) : `Packung à ${a.packSize} kg`}</p>
             <div className="row wrap" style={{ marginTop: 8, gap: 8 }}>
               {f.ordered ? <Pill tone="blue">bestellt</Pill> : <LightPill light={tone} />}
               <Pill>{reichtText(stockSim(db, storeId, a.id, 0).firstGap)}</Pill>

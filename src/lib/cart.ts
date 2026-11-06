@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-/** Warenkorb „Bei der Zentrale bestellen“. Liegt außerhalb der Seite, damit die Bestellliste und die Tour ihn befüllen können. */
+/** Warenkorb „Beim Headquarter bestellen“. Liegt außerhalb der Seite, damit die Bestellliste und die Tour ihn befüllen können. */
 export interface CartState {
   storeId: string
   lines: Record<string, number>

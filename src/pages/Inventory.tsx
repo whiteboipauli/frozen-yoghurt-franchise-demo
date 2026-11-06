@@ -59,11 +59,11 @@ export function InventoryPage({ storeId }: { storeId: string }) {
   const yearEnd = isYearEnd(st.due)
 
   const tile = st.special
-    ? { lvl: 'rot' as Level, title: 'Sonder-Inventur vom HQ: bitte jetzt zählen', sub: 'Das HQ bittet um eine zusätzliche Zählung der von der Zentrale bezogenen Artikel.' }
+    ? { lvl: 'rot' as Level, title: 'Sonder-Inventur vom HQ: bitte jetzt zählen', sub: 'Das HQ bittet um eine zusätzliche Zählung der vom Headquarter bezogenen Artikel.' }
     : st.status === 'überfällig'
       ? { lvl: 'rot' as Level, title: `Monatsinventur ${monthLabel(st.period)} überfällig – bitte jetzt zählen`, sub: `Sie war bis zum ${fmtDate(st.deadline)} fällig. Letzte Monatsinventur: ${st.last ? fmtDate(stichtagOf(st.last)) : 'noch nie'}.` }
       : st.status === 'offen'
-        ? { lvl: 'bernstein' as Level, title: `Monatsinventur ${monthLabel(st.period)}: jetzt zählen`, sub: `Stichtag ist der ${fmtDate(st.due)}. Zähle alle Artikel der Zentrale. Du siehst bewusst keine Vorgabe.${yearEnd ? ' Diese Inventur gilt zugleich als Jahresinventur.' : ''}` }
+        ? { lvl: 'bernstein' as Level, title: `Monatsinventur ${monthLabel(st.period)}: jetzt zählen`, sub: `Stichtag ist der ${fmtDate(st.due)}. Zähle alle Artikel des Headquarters. Du siehst bewusst keine Vorgabe.${yearEnd ? ' Diese Inventur gilt zugleich als Jahresinventur.' : ''}` }
         : st.doneOn
           ? { lvl: 'gruen' as Level, title: `Monatsinventur ${monthLabel(prevMonth(st.period))}: erledigt am ${fmtDate(st.doneOn)}`, sub: `Danke! Die nächste Inventur hat den Stichtag ${fmtDate(st.due)} – zählen kannst du ab dem ${fmtDate(st.from)}.${yearEnd ? ' Sie gilt zugleich als Jahresinventur.' : ''}` }
           : { lvl: 'gruen' as Level, title: 'Keine Inventur fällig', sub: `Die nächste Monatsinventur hat den Stichtag ${fmtDate(st.due)} – zählen kannst du ab dem ${fmtDate(st.from)}.` }
