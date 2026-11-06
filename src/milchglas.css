@@ -696,3 +696,5 @@ button.big-count { padding: 0; display: flex; align-items: center; gap: 14px; bo
 .back-row { margin: 0 0 14px; }
 .back-btn { font-weight: 650; }
 .am-modal > .back-btn { margin-bottom: 12px; }
+
+.login-slogan { margin: -6px 0 14px; font-size: 14px; color: var(--ink-3); }

@@ -16,6 +16,7 @@ export function LoginPage() {
     <div className="login">
       <div className="login-in">
         <div className="login-brand"><div className="brand-mark"><Icon name="becher" size={22} stroke={2} /></div><div><b>{brand.produktName}</b><span>{brand.untertitel}</span></div></div>
+        <p className="login-slogan">{brand.slogan}</p>
         <h1>Wer meldet sich an?</h1>
         <p className="login-note"><Icon name="lock" size={16} />Demo-Login – im echten System mit Passwort.</p>
         <div className="login-grid">

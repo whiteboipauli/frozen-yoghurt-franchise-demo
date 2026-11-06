@@ -1,4 +1,4 @@
-# Frozen Yoghurt Franchise – Warenwirtschaft (Demo)
+# Frozen Yoghurt Franchise – Warenwirtschaft & Filialsteuerung (Demo)
 
 Demo-Prototyp für Vorführungen. **Alle Daten sind fiktiv** (Läden, Personen, Umsätze, Rechnungen). Es gibt keinen Server und keine echte Anbindung.
 

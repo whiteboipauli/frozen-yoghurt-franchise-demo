@@ -1,7 +1,9 @@
 /** Zentrale Marken- und Namenstexte der Demo. Hier ändern, dann gilt es überall. */
 export const brand = {
   produktName: 'Frozen Yoghurt Franchise',
-  untertitel: 'Warenwirtschaft',
+  untertitel: 'Warenwirtschaft & Filialsteuerung',
+  /** Kleine Zeile unter dem Titel auf der Startseite */
+  slogan: 'Bestand, Bestellung, Dienstplan und Kontrolle – alles an einem Ort.',
   ladenMarke: 'Frozen Yoghurt',
   zentraleName: 'HQ',
   zentraleUntertitel: 'Kontrolle der Läden',
