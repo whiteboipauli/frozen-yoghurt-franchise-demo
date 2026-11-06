@@ -72,6 +72,20 @@ export function sickGaps(db: Db, storeId: string, today = todayISO()): SickGap[]
   }
   return out.sort((a, b) => a.date.localeCompare(b.date) || a.gap.from - b.gap.from)
 }
+/** Krankmeldungen für heute (für das Login-Pop-up): mit Lückenfenster, offen/geschlossen und wer die Lücke geschlossen hat */
+export interface SickToday { key: string; empName: string; date: string; from: number; to: number; missing: number; open: boolean; closedBy: string[] }
+export function sickToday(db: Db, storeId: string, today = todayISO()): SickToday[] {
+  const out: SickToday[] = []
+  for (const c of calloutsOf(db, storeId)) {
+    const sh = c.shiftIds.map((id) => db.shifts.find((s) => s.id === id)).filter((s): s is Shift => !!s && s.date === today && s.status === 'ausfall')
+    if (!sh.length) continue
+    const from = Math.min(...sh.map((s) => s.start)), to = Math.max(...sh.map((s) => s.end))
+    const gap = sickGaps(db, storeId, today).find((k) => k.calloutId === c.id && k.date === today)
+    const by = db.shifts.filter((s) => s.storeId === storeId && s.date === today && s.status !== 'ausfall' && s.why !== 'Demo-Dienstplan' && s.start < to && s.end > from).map((s) => db.employees.find((e) => e.id === s.empId)?.name).filter((n): n is string => !!n)
+    out.push({ key: `${c.id}|${today}`, empName: db.employees.find((e) => e.id === c.empId)?.name ?? 'Mitarbeiter/in', date: today, from, to, missing: gap?.gap.missing ?? 1, open: !!gap, closedBy: [...new Set(by)] })
+  }
+  return out
+}
 /** „heute“ bzw. „am Di 10.11.“ */
 export const dayWord = (date: string, today = todayISO()) => (date === today ? 'heute' : `am ${WEEKDAYS[weekdayIdx(date)].slice(0, 2)} ${date.slice(8, 10)}.${date.slice(5, 7)}.`)
 export const missingWord = (n: number) => (n === 1 ? '1 Person' : `${n} Personen`)

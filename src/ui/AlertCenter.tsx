@@ -7,7 +7,8 @@ import { Icon } from './icons'
 import { Btn, pushToast } from './kit'
 import { useTour } from './tour-state'
 import { todayISO } from '../lib/date'
-import { dayWord, missingWord, range as timeRange, sickGaps, type SickGap } from '../logic/callouts'
+import { planUi } from '../lib/plan-ui'
+import { dayWord, missingWord, range as timeRange, sickGaps, sickToday, type SickGap } from '../logic/callouts'
 import { GapDialog } from '../pages/GapDialog'
 
 /** Aktuelle Alarme (ohne weggeklickte) */
@@ -32,7 +33,7 @@ export function AlertWatcher({ mode, storeId }: { mode: Mode; storeId: string })
   const [critical, setCritical] = useState<Alert | null>(null)
   const shown = useRef(false)
   const announced = useRef<Set<string>>(new Set())
-  const [sickPop, setSickPop] = useState<SickGap | null>(null)
+  const [sickPop, setSickPop] = useState<string | null>(null)
   const [gapOpen, setGapOpen] = useState<SickGap | null>(null)
 
   useEffect(() => {
@@ -64,26 +65,28 @@ export function AlertWatcher({ mode, storeId }: { mode: Mode; storeId: string })
     }
   }, [tour.welcome, tour.active, mode, db, storeId])
 
-  // Krankmeldung: Pop-up für jede neu entstandene Lücke (nach der Anmeldung bzw. sofort, wenn man selbst eine Krankmeldung einträgt)
+  // Krankmeldung: Pop-up bei jedem Login, solange eine Krankmeldung für heute besteht (Lücke offen oder schon geschlossen)
+  const sicks = sickToday(db, storeId, todayISO())
   useEffect(() => {
     if (tour.welcome || tour.active || mode !== 'filiale') return
-    const fresh = sickGaps(db, storeId, todayISO()).filter((k) => !announced.current.has(k.key))
+    const fresh = sicks.filter((k) => !announced.current.has(k.key))
     fresh.forEach((k) => announced.current.add(k.key))
-    if (fresh.length) setSickPop(fresh[0])
+    if (fresh.length) setSickPop(fresh[0].key)
   }, [db, storeId, mode, tour.welcome, tour.active])
-  const sickNow = sickPop && sickGaps(db, storeId, todayISO()).some((k) => k.key === sickPop.key)
+  const sk = sickPop ? sicks.find((k) => k.key === sickPop) : undefined
 
   const sickUi = (
     <>
-      {sickPop && sickNow && !tour.active && mode === 'filiale' && (
+      {sk && !tour.active && mode === 'filiale' && (
         <div className="glass critical sick-pop" role="alert">
-          <span className="ci"><Icon name="person-ausfall" size={28} /></span>
+          <span className="ci" style={sk.open ? undefined : { background: 'var(--ok, #2e9d5b)' }}><Icon name={sk.open ? 'person-ausfall' : 'check'} size={28} /></span>
           <div>
-            <b>Krankmeldung: {sickPop.empName} hat sich krank gemeldet – Lücke {dayWord(sickPop.date)} {timeRange(sickPop.gap.from, sickPop.gap.to).replace(' Uhr', '')} Uhr</b>
-            <p>Es {sickPop.gap.missing === 1 ? 'fehlt' : 'fehlen'} {missingWord(sickPop.gap.missing)}.</p>
+            <b>Krankmeldung: {sk.empName} hat sich krank gemeldet – Lücke {dayWord(sk.date)} {timeRange(sk.from, sk.to).replace(' Uhr', '')} Uhr</b>
+            <p>{sk.open ? `Es ${sk.missing === 1 ? 'fehlt' : 'fehlen'} ${missingWord(sk.missing)}.` : `Geschlossen durch ${sk.closedBy.join(', ') || 'eine Ersatzperson'}.`}</p>
           </div>
-          <Btn kind="primary" onClick={() => { setGapOpen(sickPop); setSickPop(null) }}>Lücke schließen</Btn>
-          <Btn onClick={() => setSickPop(null)}>Später</Btn>
+          {sk.open
+            ? <><Btn kind="primary" onClick={() => { const k = sickGaps(db, storeId, todayISO()).find((g) => `${g.calloutId}|${g.date}` === sk.key); setSickPop(null); if (k) setGapOpen(k) }}>Lücke schließen</Btn><Btn onClick={() => setSickPop(null)}>Später</Btn></>
+            : <><Btn kind="primary" onClick={() => { setSickPop(null); planUi.openTagToday(); go('/filiale/team/dienstplan') }}>Zum Dienstplan</Btn><Btn onClick={() => setSickPop(null)}>Schließen</Btn></>}
         </div>
       )}
       {gapOpen && <GapDialog key={gapOpen.key} storeId={storeId} date={gapOpen.date} gap={gapOpen.gap} onClose={() => setGapOpen(null)} />}
