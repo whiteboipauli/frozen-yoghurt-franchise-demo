@@ -12,6 +12,7 @@ import { formatInvoiceNumber, makeInvoice, makeStorno, nextCoNo, packsOf, round2
 import { availWindow, isAbsent, planRange } from '../logic/hr'
 import { openHours } from '../logic/history'
 import { staffDay } from '../logic/staffing'
+import { alertMem } from '../logic/alerts'
 import { reportSick, requestCover, answerCover, leaveOpen, setEau } from '../logic/callouts'
 import { feeFor, feeInvoiceOf, makeFeeInvoice, revCtx } from '../logic/fees'
 
@@ -161,6 +162,8 @@ export function generateSchedule(db: Db, storeId: string, from: string, days: nu
 
 export const actions = {
   resetDemo() {
+    try { sessionStorage.removeItem('fj-ww-crit'); localStorage.removeItem('fj-ww-alerts') } catch { /* ignorieren */ }
+    alertMem.reset()
     commit(reset())
   },
 

@@ -58,11 +58,9 @@ export function AlertWatcher({ mode, storeId }: { mode: Mode; storeId: string })
   useEffect(() => {
     if (shown.current || tour.welcome || tour.active || mode !== 'filiale') return
     shown.current = true
-    try { if (sessionStorage.getItem('fj-ww-crit')) return } catch { /* ignorieren */ }
     const reds = storeAlerts(db, storeId).filter((a) => a.level === 'red' && a.articleId && !alertMem.isDismissed(a.key))
     if (reds.length) {
       setCritical(reds[0])
-      try { sessionStorage.setItem('fj-ww-crit', '1') } catch { /* ignorieren */ }
     }
   }, [tour.welcome, tour.active, mode, db, storeId])
 
